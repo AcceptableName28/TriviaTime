@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pauline & Jon Trivia</title>
+  <style>
+    :root { --gap: 12px; --radius: 14px; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background:#0b0f19; color:#eef2ff; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 18px; }
+    h1 { margin: 6px 0 12px; font-size: 22px; letter-spacing: .2px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: var(--gap); }
+    @media (min-width: 940px){ .grid { grid-template-columns: 1.18fr .82fr; } }
+    .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); border-radius: var(--radius); padding: 14px; backdrop-filter: blur(6px); }
+    .row { display:flex; flex-wrap: wrap; gap: 10px; align-items:center; }
+    label { font-size: 12px; opacity: .85; display:block; margin-bottom:6px; }
+    input[type="text"], input[type="number"] {
+      width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(0,0,0,0.25); color: #eef2ff;
+    }
+    select {
+      padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(0,0,0,0.25); color: #eef2ff;
+    }
+    button {
+      padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.10); color: #eef2ff; cursor: pointer;
+    }
+    button:hover { background: rgba(255,255,255,0.16); }
+    button.primary { background: rgba(99,102,241,0.35); border-color: rgba(99,102,241,0.5); }
+    button.primary:hover { background: rgba(99,102,241,0.5); }
+    button.danger { background: rgba(239,68,68,0.25); border-color: rgba(239,68,68,0.35); }
+    button.danger:hover { background: rgba(239,68,68,0.35); }
+    button.good { background: rgba(34,197,94,0.22); border-color: rgba(34,197,94,0.32); }
+    button.good:hover { background: rgba(34,197,94,0.32); }
+    button.gold { background: rgba(245,158,11,0.22); border-color: rgba(245,158,11,0.32); }
+    button.gold:hover { background: rgba(245,158,11,0.32); }
+
+    .pill { padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.16); font-size: 12px; opacity:.95; }
+    .muted { opacity:.8; }
+    .bigQ { font-size: 20px; line-height: 1.25; margin: 8px 0 6px; }
+    .ansBox { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 1px dashed rgba(255,255,255,0.25); background: rgba(0,0,0,0.25); }
+    .hidden { display:none; }
+
+    .scoreGrid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .scoreBox { padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.14); background: rgba(0,0,0,0.22); }
+    .scoreName { font-weight: 700; font-size: 14px; }
+    .scoreNum { font-size: 36px; font-weight: 800; margin-top: 2px; }
+    .tapHint { font-size: 12px; opacity: .8; margin-top: 4px; }
+
+    .awardRow button { flex: 1 1 140px; }
+    .divider { height:1px; background: rgba(255,255,255,0.12); margin: 10px 0; }
+    .mini { font-size: 12px; opacity: .85; }
+    .turnTag { font-weight:700; }
+
+    .timer {
+      display:flex; gap: 10px; align-items:center; flex-wrap: wrap;
+      padding: 10px; border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.20);
+      margin-top: 10px;
+    }
+    .timeBubble {
+      padding: 8px 12px; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.16);
+      font-weight: 900; letter-spacing: .4px;
+      min-width: 92px; text-align:center;
+    }
+    .toast {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: 16px; padding: 10px 12px; border-radius: 12px;
+      background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.18);
+      max-width: 92vw; z-index: 9999; display:none;
+    }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; padding: 2px 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.16); opacity:.95;}
+    .banner {
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(99,102,241,0.15);
+      margin-top: 10px;
+    }
+    .banner strong { font-weight: 900; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Trivia Night 🎮</h1>
+
+    <div class="grid">
+      <!-- LEFT: Question -->
+      <div class="card" id="qCard">
+        <div class="row" style="justify-content: space-between;">
+          <div class="row">
+            <span class="pill" id="catPill">Category</span>
+            <span class="pill muted">#<span id="qIndex">0</span>/<span id="qTotal">0</span></span>
+            <span class="pill muted" id="mixPill">Mix: All</span>
+            <span class="pill" id="matchPill">Match: OFF</span>
+          </div>
+          <div class="row">
+            <span class="pill">Turn: <span class="turnTag" id="turnName">—</span></span>
+            <span class="pill" id="pointValuePill">Point: 1</span>
+          </div>
+        </div>
+
+        <div class="banner hidden" id="matchBanner">
+          <div><strong>Best of 10 Match Mode</strong></div>
+          <div class="mini muted" id="matchStatus">First to 6 points wins (or highest after 10 questions).</div>
+        </div>
+
+        <div class="bigQ" id="questionText">Press “Next Question” to begin.</div>
+
+        <div class="row">
+          <button class="primary" id="nextBtn">Next Question</button>
+          <button id="showAnsBtn">Show Answer</button>
+          <button id="toggleModeBtn" title="Switch between Take Turns and Answer at the Same Time">Mode: Take Turns</button>
+          <button id="passBtn" title="Pass turn to the other player">Pass Turn</button>
+        </div>
+
+        <!-- Timer / Buzzer -->
+        <div class="timer">
+          <div class="timeBubble"><span id="timeLeft">—</span>s</div>
+          <button class="good" id="startTimerBtn">Start Timer</button>
+          <button id="stopTimerBtn">Stop</button>
+          <button id="buzzerBtn" class="danger" title="Manual buzzer">Buzzer</button>
+
+          <div style="flex: 1 1 220px;">
+            <label style="margin:0 0 4px;">Seconds per question</label>
+            <input type="number" id="secondsInput" min="3" max="120" value="15" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button id="lightningBtn" class="gold" title="Next question is worth 2 points and uses a shorter timer if enabled.">⚡ Lightning Round: OFF</button>
+          <button id="forceLightningBtn" title="Make the next question a lightning question (2 points).">⚡ Next = Lightning</button>
+        </div>
+
+        <div class="ansBox hidden" id="answerBox">
+          <div class="mini muted">Answer:</div>
+          <div id="answerText" style="font-size:16px; margin-top:4px;"></div>
+          <div class="divider"></div>
+          <div class="mini">Award <span id="awardPointsLabel">1</span> point(s):</div>
+          <div class="row awardRow" style="margin-top:8px;">
+            <button id="awardP1">Player 1</button>
+            <button id="awardP2">Player 2</button>
+            <button class="danger" id="awardNone">No one answered correctly</button>
+          </div>
+          <div class="mini muted" style="margin-top:10px;">
+            Tip: Lightning questions are worth 2 points. Use them when you want chaos 😈
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Settings / Scores -->
+      <div class="card">
+        <div class="row" style="justify-content: space-between;">
+          <div class="pill">Players & Settings</div>
+          <button id="resetBtn" class="danger" title="Reset scores and restart">Reset</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row" style="gap: 12px;">
+          <div style="flex:1 1 220px;">
+            <label>Player 1</label>
+            <input type="text" id="p1Name" value="Pauline" />
+          </div>
+          <div style="flex:1 1 220px;">
+            <label>Player 2</label>
+            <input type="text" id="p2Name" value="Jon" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div style="flex:1 1 260px;">
+            <label>Question Mix</label>
+            <select id="mixSelect">
+              <option value="all" selected>All (90s + TV + Pop + Star Wars + Star Trek + Random + Basic + Funny Facts)</option>
+              <option value="tv">TV Shows Only (Friends + HIMYM + More)</option>
+              <option value="friends">Friends Only</option>
+              <option value="himym">How I Met Your Mother Only</option>
+              <option value="90s">90s Only</option>
+              <option value="pop">Pop Culture Only</option>
+              <option value="sw">Star Wars Only</option>
+              <option value="st">Star Trek Only</option>
+              <option value="random">Random Facts Only</option>
+              <option value="basic">Basic Knowledge Only</option>
+              <option value="funny">Funny Facts Only</option>
+            </select>
+          </div>
+          <div style="flex: 0 0 auto;">
+            <label>&nbsp;</label>
+            <button id="applyMixBtn">Apply</button>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:8px;">
+          <button id="randomCategoryBtn" title="Next question will be from a random category (within the chosen mix).">🎲 Random Category: OFF</button>
+          <button id="reshuffleBtn" title="Shuffle remaining questions">Shuffle</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <button id="matchModeBtn" class="primary" title="Toggle Best of 10 match mode.">🏁 Best of 10: OFF</button>
+          <button id="newMatchBtn" title="Start a fresh Best of 10 match right now.">New Match</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="scoreGrid">
+          <div class="scoreBox">
+            <div class="scoreName" id="p1Label">Pauline</div>
+            <div class="scoreNum" id="p1Score">0</div>
+            <div class="tapHint">Award points after “Show Answer”.</div>
+          </div>
+          <div class="scoreBox">
+            <div class="scoreName" id="p2Label">Jon</div>
+            <div class="scoreNum" id="p2Score">0</div>
+            <div class="tapHint">Use “No one” to skip.</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="mini muted">
+          <b>Keyboard shortcuts (desktop)</b><br>
+          <span class="kbd">n</span> next • <span class="kbd">a</span> answer • <span class="kbd">t</span> timer • <span class="kbd">b</span> buzzer
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  // ---------- Question Bank ----------
+  // Expanded with more general knowledge, random facts, funny facts, and 90s.
+  const BANK = [
+    // ===== 90s =====
+    {cat:"90s", q:"What 1997 movie features the line: “I’m the king of the world!”?", a:"Titanic."},
+    {cat:"90s", q:"Which handheld digital pet toy became a huge craze in the late 90s?", a:"Tamagotchi."},
+    {cat:"90s", q:"Which console launched in the U.S. in 1996 with Super Mario 64?", a:"Nintendo 64."},
+    {cat:"90s", q:"Which band sang “Smells Like Teen Spirit”?", a:"Nirvana."},
+    {cat:"90s", q:"What 90s TV show is set in Bayside High with Zack, Kelly, and Slater?", a:"Saved by the Bell."},
+    {cat:"90s", q:"What’s the name of the coffee shop in Friends?", a:"Central Perk."},
+    {cat:"90s", q:"What Disney movie (1994) features the song “Circle of Life”?", a:"The Lion King."},
+    {cat:"90s", q:"What’s the name of the 90s cartoon with a sponge who lives in a pineapple under the sea?", a:"SpongeBob SquarePants."},
+    {cat:"90s", q:"Which 90s show featured the phrase “Did I do that?”", a:"Family Matters (Steve Urkel)."},
+    {cat:"90s", q:"What was the name of the popular 90s handheld game with falling blocks?", a:"Tetris (popularized on Game Boy)."},
+    {cat:"90s", q:"Which 90s sitcom starred Will Smith as a teen moving to live with his aunt and uncle?", a:"The Fresh Prince of Bel-Air."},
+    {cat:"90s", q:"Which 90s movie has the quote: “Life is like a box of chocolates”?", a:"Forrest Gump."},
+    {cat:"90s", q:"What was the name of the Disney TV channel show about a boy who could time travel by falling into a sticky goo?", a:"Even Stevens? (Trick!) Not time travel. (Answer: There wasn’t one—this is a trick question.)"},
+    {cat:"90s", q:"Which singer released the hit “...Baby One More Time” in 1998?", a:"Britney Spears."},
+    {cat:"90s", q:"What is the name of the fictional town in Hey Arnold!?", a:"Hillwood."},
+
+    // ===== TV (general) =====
+    {cat:"TV", q:"In The Office (US), what’s the name of the paper company branch?", a:"Dunder Mifflin (Scranton branch)."},
+    {cat:"TV", q:"In Breaking Bad, what is Walter White’s nickname in the drug trade?", a:"Heisenberg."},
+    {cat:"TV", q:"In Stranger Things, what is Eleven’s favorite food?", a:"Eggo waffles."},
+    {cat:"TV", q:"In The Simpsons, what city do the Simpsons live in?", a:"Springfield."},
+    {cat:"TV", q:"In Parks and Recreation, what is Leslie Knope’s job?", a:"She works in the Parks Department (public servant)."},
+    {cat:"TV", q:"In Game of Thrones, what is the name of Jon Snow’s direwolf?", a:"Ghost."},
+    {cat:"TV", q:"In The Mandalorian, what is the nickname often used for Grogu?", a:"Baby Yoda."},
+    {cat:"TV", q:"In The Big Bang Theory, what’s Sheldon’s favorite seat called?", a:"His spot."},
+
+    // ===== Friends =====
+    {cat:"Friends", q:"What’s the name of Ross’s second wife (who comes out as a lesbian)?", a:"Carol."},
+    {cat:"Friends", q:"Who is the chef among the Friends?", a:"Monica."},
+    {cat:"Friends", q:"What is Joey’s famous catchphrase?", a:"“How you doin’?”"},
+    {cat:"Friends", q:"What’s the name of Phoebe’s quirky twin sister?", a:"Ursula."},
+    {cat:"Friends", q:"What is the name of Ross’s pet monkey?", a:"Marcel."},
+    {cat:"Friends", q:"Which character famously says: “We were on a break!”", a:"Ross."},
+    {cat:"Friends", q:"What’s Chandler’s middle name?", a:"Muriel."},
+    {cat:"Friends", q:"What is the name of Joey’s agent?", a:"Estelle."},
+    {cat:"Friends", q:"What is the name of Rachel’s daughter?", a:"Emma."},
+    {cat:"Friends", q:"What instrument does Phoebe often play while singing?", a:"Guitar."},
+
+    // ===== HIMYM =====
+    {cat:"HIMYM", q:"What’s Barney Stinson’s catchphrase?", a:"“Legendary.”"},
+    {cat:"HIMYM", q:"What instrument does Ted steal a blue version of early on?", a:"A blue French horn."},
+    {cat:"HIMYM", q:"What is the name of Marshall and Lily’s son?", a:"Marvin."},
+    {cat:"HIMYM", q:"What’s the name of the bar the gang hangs out at?", a:"MacLaren’s Pub."},
+    {cat:"HIMYM", q:"What is Robin’s last name?", a:"Scherbatsky."},
+    {cat:"HIMYM", q:"What is Barney’s rulebook called?", a:"The Playbook."},
+    {cat:"HIMYM", q:"What city does the show primarily take place in?", a:"New York City."},
+    {cat:"HIMYM", q:"What is Marshall’s last name?", a:"Eriksen."},
+
+    // ===== Pop culture =====
+    {cat:"Pop Culture", q:"What superhero is also known as the ‘Dark Knight’?", a:"Batman."},
+    {cat:"Pop Culture", q:"What’s the name of the fictional school in Harry Potter?", a:"Hogwarts."},
+    {cat:"Pop Culture", q:"In The Lion King, what is Simba’s father’s name?", a:"Mufasa."},
+    {cat:"Pop Culture", q:"What’s the name of the toy cowboy in Toy Story?", a:"Woody."},
+    {cat:"Pop Culture", q:"In Marvel, what metal is Wolverine’s skeleton coated with?", a:"Adamantium."},
+    {cat:"Pop Culture", q:"What is the name of the hobbit who carries the One Ring most of the way?", a:"Frodo Baggins."},
+
+    // ===== Star Wars =====
+    {cat:"Star Wars", q:"What is the name of Han Solo’s ship?", a:"The Millennium Falcon."},
+    {cat:"Star Wars", q:"What species is Chewbacca?", a:"Wookiee."},
+    {cat:"Star Wars", q:"What is the weapon used by Jedi and Sith?", a:"A lightsaber."},
+    {cat:"Star Wars", q:"Who is Luke Skywalker’s twin sister?", a:"Leia Organa."},
+    {cat:"Star Wars", q:"What color is Yoda’s lightsaber in the prequel trilogy?", a:"Green."},
+    {cat:"Star Wars", q:"What is the name of the desert planet where Luke grows up?", a:"Tatooine."},
+
+    // ===== Star Trek =====
+    {cat:"Star Trek", q:"What is the name of Captain Picard’s starship in TNG?", a:"The USS Enterprise (NCC-1701-D)."},
+    {cat:"Star Trek", q:"What is Spock’s species (half and half)?", a:"Half Vulcan, half Human."},
+    {cat:"Star Trek", q:"What phrase is associated with the Vulcan salute?", a:"“Live long and prosper.”"},
+    {cat:"Star Trek", q:"What is the name of the ship’s doctor in the original series?", a:"Dr. Leonard “Bones” McCoy."},
+    {cat:"Star Trek", q:"What is the species known for collective consciousness and assimilation?", a:"The Borg."},
+
+    // ===== Random facts =====
+    {cat:"Random", q:"What planet is known as the Red Planet?", a:"Mars."},
+    {cat:"Random", q:"What is the largest ocean on Earth?", a:"The Pacific Ocean."},
+    {cat:"Random", q:"How many continents are there?", a:"Seven."},
+    {cat:"Random", q:"What do bees collect and use to make honey?", a:"Nectar."},
+    {cat:"Random", q:"What is the only mammal capable of true flight?", a:"The bat."},
+    {cat:"Random", q:"Which animal has fingerprints so similar to humans they can confuse investigations?", a:"Koalas."},
+    {cat:"Random", q:"What is the hardest natural substance on Earth?", a:"Diamond."},
+    {cat:"Random", q:"What is the tallest mountain in the world (from sea level)?", a:"Mount Everest."},
+    {cat:"Random", q:"Which country has the most pyramids (more than Egypt)?", a:"Sudan."},
+
+    // ===== Basic knowledge =====
+    {cat:"Basic", q:"What is the capital of California?", a:"Sacramento."},
+    {cat:"Basic", q:"How many minutes are in an hour?", a:"60."},
+    {cat:"Basic", q:"What gas do humans breathe in to survive?", a:"Oxygen."},
+    {cat:"Basic", q:"How many sides does a triangle have?", a:"3."},
+    {cat:"Basic", q:"What is the freezing point of water in Celsius?", a:"0°C."},
+    {cat:"Basic", q:"What is the largest planet in our solar system?", a:"Jupiter."},
+    {cat:"Basic", q:"What is 9 × 7?", a:"63."},
+    {cat:"Basic", q:"How many letters are in the English alphabet?", a:"26."},
+
+    // ===== Funny facts =====
+    {cat:"Funny Facts", q:"True or false: Octopuses have three hearts.", a:"True."},
+    {cat:"Funny Facts", q:"What’s the name for a group of flamingos?", a:"A flamboyance."},
+    {cat:"Funny Facts", q:"True or false: Bananas are berries.", a:"True (botanically)."},
+    {cat:"Funny Facts", q:"What animal’s poop is famously cube-shaped?", a:"Wombat."},
+    {cat:"Funny Facts", q:"What animal can sleep standing up?", a:"Horses (they can doze while standing)."},
+    {cat:"Funny Facts", q:"What’s the ‘technical’ fear of long words called?", a:"Hippopotomonstrosesquipedaliophobia."},
+    {cat:"Funny Facts", q:"What is the only food that never spoils (when stored properly)?", a:"Honey."},
+  ];
+
+  // Lightning-only pool (fast, fun, often simple)
+  const LIGHTNING_POOL = [
+    {cat:"Lightning", q:"What color is the sky on a clear day?", a:"Blue."},
+    {cat:"Lightning", q:"How many days are in a week?", a:"7."},
+    {cat:"Lightning", q:"What’s the opposite of ‘up’?", a:"Down."},
+    {cat:"Lightning", q:"What planet do we live on?", a:"Earth."},
+    {cat:"Lightning", q:"What is 12 + 8?", a:"20."},
+    {cat:"Lightning", q:"Which animal says “moo”?", a:"A cow."},
+    {cat:"Lightning", q:"What is the first month of the year?", a:"January."},
+    {cat:"Lightning", q:"Which is bigger: an elephant or a mouse?", a:"An elephant."},
+    {cat:"Lightning", q:"What do you call frozen water?", a:"Ice."},
+    {cat:"Lightning", q:"What is the capital of the U.S.?", a:"Washington, D.C."},
+    {cat:"Lightning", q:"How many wheels does a bicycle have?", a:"2."},
+    {cat:"Lightning", q:"What do you use to cut paper?", a:"Scissors."},
+    {cat:"Lightning", q:"What is the largest ocean?", a:"Pacific."},
+    {cat:"Lightning", q:"What shape has 4 equal sides?", a:"A square."},
+    {cat:"Lightning", q:"Finish this: “May the ____ be with you.”", a:"Force."},
+  ];
+
+  // ---------- Elements ----------
+  const el = (id) => document.getElementById(id);
+
+  const catPill = el("catPill");
+  const mixPill = el("mixPill");
+  const matchPill = el("matchPill");
+  const pointValuePill = el("pointValuePill");
+  const qIndexEl = el("qIndex");
+  const qTotalEl = el("qTotal");
+  const turnNameEl = el("turnName");
+  const questionText = el("questionText");
+  const answerBox = el("answerBox");
+  const answerText = el("answerText");
+  const awardPointsLabel = el("awardPointsLabel");
+
+  const nextBtn = el("nextBtn");
+  const showAnsBtn = el("showAnsBtn");
+  const toggleModeBtn = el("toggleModeBtn");
+  const passBtn = el("passBtn");
+
+  const p1NameInput = el("p1Name");
+  const p2NameInput = el("p2Name");
+  const p1Label = el("p1Label");
+  const p2Label = el("p2Label");
+  const p1ScoreEl = el("p1Score");
+  const p2ScoreEl = el("p2Score");
+
+  const awardP1 = el("awardP1");
+  const awardP2 = el("awardP2");
+  const awardNone = el("awardNone");
+
+  const mixSelect = el("mixSelect");
+  const applyMixBtn = el("applyMixBtn");
+  const randomCategoryBtn = el("randomCategoryBtn");
+  const reshuffleBtn = el("reshuffleBtn");
+  const resetBtn = el("resetBtn");
+
+  // Timer / buzzer
+  const timeLeftEl = el("timeLeft");
+  const secondsInput = el("secondsInput");
+  const startTimerBtn = el("startTimerBtn");
+  const stopTimerBtn = el("stopTimerBtn");
+  const buzzerBtn = el("buzzerBtn");
+
+  // Lightning
+  const lightningBtn = el("lightningBtn");
+  const forceLightningBtn = el("forceLightningBtn");
+
+  // Match mode
+  const matchModeBtn = el("matchModeBtn");
+  const newMatchBtn = el("newMatchBtn");
+  const matchBanner = el("matchBanner");
+  const matchStatus = el("matchStatus");
+
+  const toastEl = el("toast");
+
+  // ---------- Game State ----------
+  let mode = "turns"; // "turns" or "simul"
+  let randomCategory = false;
+
+  let turn = 0; // 0 => P1, 1 => P2
+  let score = [0, 0];
+
+  let activePool = [];
+  let current = null;
+
+  // Running totals for the current "session"
+  let questionNumber = 0;
+
+  // Best-of-10 match mode
+  let matchMode = false;
+  let matchQuestionsTarget = 10;
+  let matchQuestionsAsked = 0;
+  let matchWinScore = 6; // first to 6 wins in best-of-10
+  let matchLocked = false;
+
+  // Lightning
+  let lightningMode = false;      // if ON, lightning questions appear randomly
+  let forceNextLightning = false; // one-shot toggle
+  let currentPointValue = 1;
+
+  // Timer state
+  let timer = { running:false, secondsLeft: 0, intervalId: null };
+
+  // ---------- Helpers ----------
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.style.display = "block";
+    clearTimeout(toastEl._t);
+    toastEl._t = setTimeout(()=> toastEl.style.display="none", 1400);
+  }
+
+  function shuffle(arr){
+    for(let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function getNames(){
+    const p1 = (p1NameInput.value || "Player 1").trim();
+    const p2 = (p2NameInput.value || "Player 2").trim();
+    return [p1, p2];
+  }
+
+  function updateLabels(){
+    const [p1, p2] = getNames();
+    p1Label.textContent = p1;
+    p2Label.textContent = p2;
+    awardP1.textContent = p1;
+    awardP2.textContent = p2;
+    turnNameEl.textContent = (mode === "turns") ? (turn === 0 ? p1 : p2) : "Both";
+  }
+
+  function updateScores(){
+    p1ScoreEl.textContent = String(score[0]);
+    p2ScoreEl.textContent = String(score[1]);
+  }
+
+  function setMode(newMode){
+    mode = newMode;
+    toggleModeBtn.textContent = (mode === "turns") ? "Mode: Take Turns" : "Mode: Answer Same Time";
+    passBtn.style.display = (mode === "turns") ? "inline-block" : "none";
+    updateLabels();
+  }
+
+  function clampSeconds(n){
+    if (!Number.isFinite(n)) return 15;
+    return Math.max(3, Math.min(120, Math.round(n)));
+  }
+
+  function prettyMixName(v){
+    return (
+      v === "all" ? "All" :
+      v === "tv" ? "TV Shows" :
+      v === "friends" ? "Friends" :
+      v === "himym" ? "HIMYM" :
+      v === "90s" ? "90s" :
+      v === "pop" ? "Pop" :
+      v === "sw" ? "Star Wars" :
+      v === "st" ? "Star Trek" :
+      v === "random" ? "Random" :
+      v === "basic" ? "Basic" :
+      v === "funny" ? "Funny Facts" : "All"
+    );
+  }
+
+  function filteredBank(){
+    const mix = mixSelect.value;
+    let cats = null;
+
+    if (mix === "all") cats = ["90s","TV","Friends","HIMYM","Pop Culture","Star Wars","Star Trek","Random","Basic","Funny Facts"];
+    else if (mix === "tv") cats = ["TV","Friends","HIMYM"];
+    else if (mix === "friends") cats = ["Friends"];
+    else if (mix === "himym") cats = ["HIMYM"];
+    else if (mix === "90s") cats = ["90s"];
+    else if (mix === "pop") cats = ["Pop Culture"];
+    else if (mix === "sw") cats = ["Star Wars"];
+    else if (mix === "st") cats = ["Star Trek"];
+    else if (mix === "random") cats = ["Random"];
+    else if (mix === "basic") cats = ["Basic"];
+    else if (mix === "funny") cats = ["Funny Facts"];
+
+    return BANK.filter(x => cats.includes(x.cat));
+  }
+
+  function applyMix(){
+    stopTimer();
+    const mixVal = mixSelect.value;
+    mixPill.textContent = "Mix: " + prettyMixName(mixVal);
+
+    activePool = shuffle(filteredBank().slice());
+    questionNumber = 0;
+    current = null;
+    questionText.textContent = "Press “Next Question” to begin.";
+    catPill.textContent = "Category";
+    answerBox.classList.add("hidden");
+    qIndexEl.textContent = "0";
+    qTotalEl.textContent = String(activePool.length);
+
+    // If in match mode, reset match counters but keep scores (unless New Match)
+    if (matchMode){
+      matchQuestionsAsked = 0;
+      matchLocked = false;
+      updateMatchUI();
+    }
+
+    toast("Mix applied: " + prettyMixName(mixVal));
+  }
+
+  function pickRandomCategoryFromPool(){
+    const cats = Array.from(new Set(activePool.map(x => x.cat)));
+    if (!cats.length) return null;
+    return cats[Math.floor(Math.random()*cats.length)];
+  }
+
+  function maybePickLightning(){
+    // If forced, do it.
+    if (forceNextLightning){
+      forceNextLightning = false;
+      return true;
+    }
+    // If lightning mode is ON, give it a chance (20%)
+    if (lightningMode && Math.random() < 0.20) return true;
+    return false;
+  }
+
+  function setPointValue(v){
+    currentPointValue = v;
+    pointValuePill.textContent = "Point: " + String(v);
+    awardPointsLabel.textContent = String(v);
+  }
+
+  function nextQuestion(){
+    if (matchMode && matchLocked){
+      toast("Match is over. Start a New Match or turn Match Mode OFF.");
+      return;
+    }
+
+    stopTimer();
+    answerBox.classList.add("hidden");
+
+    const doLightning = maybePickLightning();
+    if (doLightning){
+      // lightning question is worth 2 points
+      setPointValue(2);
+      current = LIGHTNING_POOL[Math.floor(Math.random()*LIGHTNING_POOL.length)];
+      catPill.textContent = "⚡ Lightning";
+      questionText.textContent = current.q;
+      answerText.textContent = "";
+      questionNumber++;
+      qIndexEl.textContent = String(questionNumber);
+      qTotalEl.textContent = String(questionNumber + activePool.length);
+
+      // Set shorter timer suggestion: 8 seconds (only updates the display; you choose to start it)
+      const suggested = 8;
+      timeLeftEl.textContent = String(suggested);
+      toast("Lightning Round! Worth 2 points ⚡");
+    } else {
+      setPointValue(1);
+
+      if (activePool.length === 0){
+        questionText.textContent = "No more questions in this mix. Change mix or hit Reset.";
+        catPill.textContent = "Done";
+        return;
+      }
+
+      if (randomCategory){
+        const cat = pickRandomCategoryFromPool();
+        if (!cat){
+          questionText.textContent = "No more questions. Change mix or hit Reset.";
+          return;
+        }
+        const idxs = [];
+        for (let i=0;i<activePool.length;i++) if (activePool[i].cat === cat) idxs.push(i);
+        const pickIndex = idxs[Math.floor(Math.random()*idxs.length)];
+        current = activePool.splice(pickIndex, 1)[0];
+      } else {
+        current = activePool.shift();
+      }
+
+      questionNumber++;
+      qIndexEl.textContent = String(questionNumber);
+      qTotalEl.textContent = String(questionNumber + activePool.length);
+
+      catPill.textContent = current.cat;
+      questionText.textContent = current.q;
+      answerText.textContent = "";
+
+      // Prime timer display
+      timer.secondsLeft = clampSeconds(Number(secondsInput.value || 15));
+      timeLeftEl.textContent = String(timer.secondsLeft);
+    }
+
+    // Match counter increments per question shown
+    if (matchMode){
+      matchQuestionsAsked++;
+      updateMatchUI();
+      // In match mode, auto lock if question limit reached after asking
+      if (matchQuestionsAsked >= matchQuestionsTarget){
+        // don't lock immediately; allow award, then we'll lock in checkMatchEnd()
+        // this keeps UX sane.
+      }
+    }
+
+    updateLabels();
+  }
+
+  function showAnswer(){
+    if (!current){
+      toast("Get a question first 🙂");
+      return;
+    }
+    answerText.textContent = current.a;
+    answerBox.classList.remove("hidden");
+  }
+
+  // ---------- Timer + Buzzer ----------
+  function beep(){
+    try{
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "square";
+      o.frequency.value = 220;
+      g.gain.value = 0.12;
+      o.connect(g); g.connect(ctx.destination);
+      o.start();
+      setTimeout(()=>{ o.frequency.value = 140; }, 120);
+      setTimeout(()=>{ o.stop(); ctx.close(); }, 320);
+    } catch(e){
+      // ignore
+    }
+  }
+
+  function startTimer(){
+    if (!current){
+      toast("Hit Next Question first 🙂");
+      return;
+    }
+    stopTimer();
+    timer.secondsLeft = clampSeconds(Number(secondsInput.value || 15));
+    timeLeftEl.textContent = String(timer.secondsLeft);
+    timer.running = true;
+
+    timer.intervalId = setInterval(() => {
+      timer.secondsLeft--;
+      timeLeftEl.textContent = String(timer.secondsLeft);
+      if (timer.secondsLeft <= 0){
+        stopTimer();
+        beep();
+        toast("Time!");
+      }
+    }, 1000);
+
+    toast("Timer started");
+  }
+
+  function stopTimer(){
+    if (timer.intervalId) clearInterval(timer.intervalId);
+    timer.intervalId = null;
+    timer.running = false;
+  }
+
+  function buzzer(){
+    beep();
+    toast("Buzz!");
+  }
+
+  // ---------- Match Mode ----------
+  function updateMatchUI(){
+    if (!matchMode){
+      matchPill.textContent = "Match: OFF";
+      matchBanner.classList.add("hidden");
+      return;
+    }
+    matchPill.textContent = "Match: ON";
+    matchBanner.classList.remove("hidden");
+
+    const remaining = Math.max(0, matchQuestionsTarget - matchQuestionsAsked);
+    matchStatus.textContent =
+      `Q ${matchQuestionsAsked}/${matchQuestionsTarget} • First to ${matchWinScore} wins • Remaining: ${remaining}`;
+  }
+
+  function checkMatchEnd(){
+    if (!matchMode) return;
+
+    const [p1, p2] = getNames();
+
+    // Early win if someone reaches 6 in best-of-10
+    if (score[0] >= matchWinScore || score[1] >= matchWinScore){
+      matchLocked = true;
+      const winner = (score[0] > score[1]) ? p1 : p2;
+      toast(`🏆 ${winner} wins the match!`);
+      questionText.textContent = `🏆 Match Over! Winner: ${winner}. Tap “New Match” to play again.`;
+      catPill.textContent = "Match Over";
+      return;
+    }
+
+    // If 10 questions have been asked AND an award has happened, end match by score
+    if (matchQuestionsAsked >= matchQuestionsTarget){
+      matchLocked = true;
+      let msg = "";
+      if (score[0] > score[1]) msg = `🏆 ${p1} wins!`;
+      else if (score[1] > score[0]) msg = `🏆 ${p2} wins!`;
+      else msg = "🤝 It’s a tie!";
+      toast(msg);
+      questionText.textContent = `🏁 Best of 10 complete. ${msg} Tap “New Match” to play again.`;
+      catPill.textContent = "Match Over";
+      return;
+    }
+  }
+
+  function toggleMatchMode(){
+    matchMode = !matchMode;
+    matchModeBtn.textContent = matchMode ? "🏁 Best of 10: ON" : "🏁 Best of 10: OFF";
+    matchLocked = false;
+    matchQuestionsAsked = 0;
+    updateMatchUI();
+    toast(matchMode ? "Best of 10 ON" : "Best of 10 OFF");
+  }
+
+  function newMatch(){
+    stopTimer();
+    score = [0,0];
+    matchMode = true;
+    matchLocked = false;
+    matchQuestionsAsked = 0;
+    matchModeBtn.textContent = "🏁 Best of 10: ON";
+    updateScores();
+    updateMatchUI();
+    applyMix();
+    toast("New match started!");
+  }
+
+  // ---------- Scoring / Turns ----------
+  function awardPoint(playerIndexOrNull){
+    if (!current){
+      toast("No question active.");
+      return;
+    }
+
+    const pts = currentPointValue || 1;
+    const names = getNames();
+
+    if (playerIndexOrNull === 0){
+      score[0] += pts; toast(`${names[0]} +${pts}`);
+    } else if (playerIndexOrNull === 1){
+      score[1] += pts; toast(`${names[1]} +${pts}`);
+    } else {
+      toast("No point awarded");
+    }
+    updateScores();
+
+    // advance turn only in take-turns mode
+    if (mode === "turns"){
+      turn = (turn === 0) ? 1 : 0;
+      updateLabels();
+    }
+
+    // In match mode, check end conditions after awarding
+    checkMatchEnd();
+  }
+
+  function passTurn(){
+    if (mode !== "turns") return;
+    turn = (turn === 0) ? 1 : 0;
+    updateLabels();
+    toast("Turn passed");
+  }
+
+  function reshuffleRemaining(){
+    activePool = shuffle(activePool);
+    toast("Shuffled remaining questions");
+  }
+
+  function resetAll(){
+    stopTimer();
+    score = [0,0];
+    turn = 0;
+    setMode("turns");
+
+    randomCategory = false;
+    randomCategoryBtn.textContent = "🎲 Random Category: OFF";
+
+    lightningMode = false;
+    lightningBtn.textContent = "⚡ Lightning Round: OFF";
+    forceNextLightning = false;
+
+    matchMode = false;
+    matchLocked = false;
+    matchQuestionsAsked = 0;
+    matchModeBtn.textContent = "🏁 Best of 10: OFF";
+    updateMatchUI();
+
+    setPointValue(1);
+    applyMix();
+    updateScores();
+    updateLabels();
+    toast("Reset!");
+  }
+
+  // ---------- Elements events ----------
+  const nextBtn = document.getElementById("nextBtn");
+  const showAnsBtn = document.getElementById("showAnsBtn");
+  const toggleModeBtn = document.getElementById("toggleModeBtn");
+  const passBtn = document.getElementById("passBtn");
+  const applyMixBtn = document.getElementById("applyMixBtn");
+  const randomCategoryBtn2 = document.getElementById("randomCategoryBtn");
+  const reshuffleBtn2 = document.getElementById("reshuffleBtn");
+  const resetBtn2 = document.getElementById("resetBtn");
+
+  const awardP1 = document.getElementById("awardP1");
+  const awardP2 = document.getElementById("awardP2");
+  const awardNone = document.getElementById("awardNone");
+
+  const startTimerBtn = document.getElementById("startTimerBtn");
+  const stopTimerBtn = document.getElementById("stopTimerBtn");
+  const buzzerBtn = document.getElementById("buzzerBtn");
+
+  const lightningBtn2 = document.getElementById("lightningBtn");
+  const forceLightningBtn2 = document.getElementById("forceLightningBtn");
+
+  const matchModeBtn2 = document.getElementById("matchModeBtn");
+  const newMatchBtn2 = document.getElementById("newMatchBtn");
+
+  p1NameInput.addEventListener("input", updateLabels);
+  p2NameInput.addEventListener("input", updateLabels);
+
+  nextBtn.addEventListener("click", nextQuestion);
+  showAnsBtn.addEventListener("click", showAnswer);
+  toggleModeBtn.addEventListener("click", () => setMode(mode === "turns" ? "simul" : "turns"));
+  passBtn.addEventListener("click", passTurn);
+
+  awardP1.addEventListener("click", () => awardPoint(0));
+  awardP2.addEventListener("click", () => awardPoint(1));
+  awardNone.addEventListener("click", () => awardPoint(null));
+
+  applyMixBtn.addEventListener("click", applyMix);
+  randomCategoryBtn2.addEventListener("click", () => {
+    randomCategory = !randomCategory;
+    randomCategoryBtn2.textContent = randomCategory ? "🎲 Random Category: ON" : "🎲 Random Category: OFF";
+    toast(randomCategory ? "Random category ON" : "Random category OFF");
+  });
+  reshuffleBtn2.addEventListener("click", reshuffleRemaining);
+  resetBtn2.addEventListener("click", resetAll);
+
+  startTimerBtn.addEventListener("click", startTimer);
+  stopTimerBtn.addEventListener("click", () => { stopTimer(); toast("Timer stopped"); });
+  buzzerBtn.addEventListener("click", buzzer);
+
+  secondsInput.addEventListener("change", () => {
+    const s = clampSeconds(Number(secondsInput.value || 15));
+    secondsInput.value = s;
+    timeLeftEl.textContent = String(s);
+  });
+
+  lightningBtn2.addEventListener("click", () => {
+    lightningMode = !lightningMode;
+    lightningBtn2.textContent = lightningMode ? "⚡ Lightning Round: ON" : "⚡ Lightning Round: OFF";
+    toast(lightningMode ? "Lightning mode ON (random)" : "Lightning mode OFF");
+  });
+
+  forceLightningBtn2.addEventListener("click", () => {
+    forceNextLightning = true;
+    toast("Next question will be ⚡ Lightning (2 points)");
+  });
+
+  matchModeBtn2.addEventListener("click", toggleMatchMode);
+  newMatchBtn2.addEventListener("click", newMatch);
+
+  // Keyboard shortcuts (desktop)
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "n") nextQuestion();
+    if (e.key === "a") showAnswer();
+    if (e.key === "t") startTimer();
+    if (e.key === "b") buzzer();
+    if (e.key === "l") { lightningMode = !lightningMode; lightningBtn2.click(); }
+  });
+
+  // ---------- Init ----------
+  function init(){
+    setMode("turns");
+    setPointValue(1);
+    updateLabels();
+    updateScores();
+    applyMix();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
