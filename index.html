@@ -3,447 +3,464 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jon vs. Me: Trivia Ultimate</title>
+    <title>Pauline vs Jon: Trivia Ultimate</title>
     <style>
         :root {
-            --p1-color: #3498db; /* Blue */
-            --p2-color: #e74c3c; /* Red */
+            --p1-color: #8e44ad; /* Pauline (Purple) */
+            --p2-color: #2980b9; /* Jon (Blue) */
             --bg-color: #2c3e50;
             --card-bg: #ecf0f1;
             --accent: #f1c40f;
+            --text: #2c3e50;
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; touch-action: manipulation; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
-            color: #333;
+            color: var(--text);
             margin: 0;
             padding: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            overflow: hidden; /* Prevent scrolling for app-like feel */
+            overflow: hidden;
         }
 
-        /* --- SCREENS --- */
-        .screen {
-            display: none;
-            flex-direction: column;
+        /* --- LAYOUT GRID --- */
+        .game-container {
+            display: grid;
+            grid-template-rows: 60px 1fr 160px; /* Header | Card | Controls */
             height: 100%;
             width: 100%;
-            padding: 20px;
-            align-items: center;
-            justify-content: center;
+            max-width: 600px;
+            margin: 0 auto;
         }
-        
-        .screen.active { display: flex; }
 
-        /* --- MENU SCREEN --- */
-        h1 { color: white; text-align: center; margin-bottom: 30px; font-size: 2rem; }
-        .menu-btn {
-            background: white;
-            color: var(--bg-color);
-            width: 100%;
-            max-width: 300px;
-            padding: 20px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 15px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 0 #bdc3c7;
-            transition: transform 0.1s;
-        }
-        .menu-btn:active { transform: translateY(4px); box-shadow: none; }
-
-        /* --- GAME UI --- */
+        /* --- HEADER (SCORES) --- */
         .header {
-            width: 100%;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            background: rgba(0,0,0,0.2);
             color: white;
-            padding: 10px;
-            margin-bottom: 10px;
         }
         
         .score-box {
             text-align: center;
-            padding: 5px 15px;
-            border-radius: 10px;
-            border: 2px solid transparent;
+            min-width: 70px;
         }
-        .score-p1 { border-color: var(--p1-color); }
-        .score-p2 { border-color: var(--p2-color); }
-        .score-num { font-size: 1.8rem; font-weight: bold; }
-        .score-name { font-size: 0.8rem; text-transform: uppercase; }
-
-        /* TIMER BAR */
-        .timer-container {
-            width: 100%;
-            height: 10px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 5px;
-            margin-bottom: 15px;
-            overflow: hidden;
-        }
-        .timer-bar {
-            height: 100%;
-            background: var(--accent);
-            width: 100%;
-            transition: width 1s linear;
+        .score-val { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+        .score-name { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
+        
+        .round-info {
+            font-size: 0.8rem;
+            opacity: 0.6;
+            text-align: center;
         }
 
-        /* CARD */
+        /* --- MAIN CARD AREA --- */
+        .card-area {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
         .card {
             background: var(--card-bg);
             border-radius: 20px;
-            padding: 20px;
+            padding: 25px;
             width: 100%;
-            max-width: 500px;
-            flex-grow: 1; /* Fill available space */
+            height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: center; /* Center content vertically */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            text-align: center;
             position: relative;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            margin-bottom: 10px;
+            overflow-y: auto;
         }
 
-        .category-badge {
+        .category-tag {
             background: #95a5a6;
             color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.7rem;
             text-transform: uppercase;
             margin-bottom: 15px;
+            position: absolute;
+            top: 20px;
         }
 
         .question-text {
-            font-size: 1.3rem;
-            font-weight: 600;
-            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            line-height: 1.3;
             margin-bottom: 20px;
-            line-height: 1.4;
+            margin-top: 20px;
         }
 
-        .answer-reveal {
+        .answer-box {
             background: #27ae60;
             color: white;
             padding: 15px;
             border-radius: 10px;
-            width: 100%;
-            text-align: center;
+            width: 90%;
             font-size: 1.2rem;
             font-weight: bold;
-            display: none; /* Hidden initially */
-            animation: fadeIn 0.3s;
+            opacity: 0; /* Hidden by default but takes up space */
+            transition: opacity 0.3s;
         }
+        .answer-box.visible { opacity: 1; }
 
-        /* --- BUZZER AREA --- */
-        .buzzer-area {
-            display: flex;
+        /* --- TIMER --- */
+        .timer-track {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: 120px;
-            gap: 10px;
-            margin-top: auto; /* Push to bottom */
+            height: 8px;
+            background: rgba(0,0,0,0.1);
+        }
+        .timer-fill {
+            height: 100%;
+            width: 100%;
+            background: var(--accent);
+            transition: width 1s linear;
         }
 
+        /* --- CONTROLS (FIXED BOTTOM) --- */
+        .controls-area {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* BUZZER ROW */
+        .buzzer-row {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+        }
+        
         .buzzer-btn {
             flex: 1;
             border: none;
-            border-radius: 15px;
-            font-size: 1.5rem;
-            font-weight: bold;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: 800;
             color: white;
             cursor: pointer;
-            box-shadow: 0 5px 0 rgba(0,0,0,0.2);
-            transition: all 0.1s;
+            position: relative;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        
+        .btn-pauline { background-color: var(--p1-color); }
+        .btn-jon { background-color: var(--p2-color); }
+
+        .buzzer-btn:active { transform: translateY(4px); box-shadow: none; }
+        
+        /* Locked State */
+        .controls-area.locked .buzzer-btn { opacity: 0.3; pointer-events: none; }
+        .controls-area.locked .buzzer-btn.winner { opacity: 1; transform: scale(1.02); box-shadow: 0 0 15px white; }
+
+        /* ADMIN ROW */
+        .admin-row {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .buzzer-btn span { font-size: 0.8rem; font-weight: normal; opacity: 0.8; }
-
-        .btn-p1 { background-color: var(--p1-color); }
-        .btn-p1:active { transform: translateY(5px); box-shadow: none; }
-        
-        .btn-p2 { background-color: var(--p2-color); }
-        .btn-p2:active { transform: translateY(5px); box-shadow: none; }
-
-        /* LOCKED STATE (When someone buzzes in) */
-        .buzzer-area.locked .buzzer-btn { opacity: 0.3; pointer-events: none; }
-        .buzzer-area.locked .buzzer-btn.winner { opacity: 1; transform: scale(1.05); box-shadow: 0 0 15px white; }
-
-        /* CONTROL BUTTONS */
-        .controls {
-            display: none; /* Hidden until buzzer pressed */
-            width: 100%;
-            margin-top: 10px;
             gap: 10px;
+            height: 50px;
+            opacity: 0.3; /* Dimmed until buzzer pressed */
+            pointer-events: none; /* Disabled until buzzer */
         }
-        .controls.active { display: flex; flex-direction: column; }
-        
-        .btn-control {
-            padding: 15px;
+        .controls-area.active-admin .admin-row { opacity: 1; pointer-events: all; }
+
+        .btn-admin {
+            flex: 1;
             border: none;
-            border-radius: 10px;
-            font-size: 1rem;
+            border-radius: 8px;
             font-weight: bold;
-            cursor: pointer;
             color: white;
+            font-size: 1rem;
         }
         .btn-correct { background: #27ae60; }
         .btn-wrong { background: #c0392b; }
-        .btn-next { background: #34495e; margin-top: 5px; }
+        .btn-skip { background: #7f8c8d; }
 
-        /* ANIMATIONS */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* LOADING SPINNER */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     </style>
 </head>
 <body>
 
-    <div id="menu-screen" class="screen active">
-        <h1>TRIVIA NIGHT</h1>
-        <button class="menu-btn" onclick="startGame('standard')">Standard Mode</button>
-        <button class="menu-btn" onclick="startGame('bestOf10')">Best of 10 Match</button>
-        <button class="menu-btn" onclick="startGame('lightning')">⚡ Lightning Round</button>
-    </div>
-
-    <div id="game-screen" class="screen">
+    <div class="game-container">
         <div class="header">
-            <div class="score-box score-p1">
-                <div class="score-name">ME</div>
-                <div class="score-num" id="p1-score">0</div>
+            <div class="score-box">
+                <div class="score-val" id="score-p1">0</div>
+                <div class="score-name" style="color: #d2b4de;">Pauline</div>
             </div>
-            <div style="font-size:0.8rem; opacity:0.6; align-self:center;" id="mode-display">Standard</div>
-            <div class="score-box score-p2">
-                <div class="score-name">JON</div>
-                <div class="score-num" id="p2-score">0</div>
-            </div>
-        </div>
-
-        <div class="timer-container">
-            <div class="timer-bar" id="timer-bar"></div>
-        </div>
-
-        <div class="card">
-            <div class="category-badge" id="category">Category</div>
-            <div class="question-text" id="question">Loading...</div>
-            <div class="answer-reveal" id="answer">The Answer</div>
             
-            <div class="controls" id="admin-controls">
-                <div style="display:flex; gap:10px; width:100%;">
-                    <button class="btn-control btn-correct" style="flex:1" onclick="judgeAnswer(true)">Correct (+1)</button>
-                    <button class="btn-control btn-wrong" style="flex:1" onclick="judgeAnswer(false)">Wrong (0)</button>
-                </div>
-                <button class="btn-control btn-next" onclick="nextQuestion()">Next Question &rarr;</button>
+            <div class="round-info">
+                <div id="mode-text">MIXED MODE</div>
+                <div class="loader" id="loader"></div>
+            </div>
+
+            <div class="score-box">
+                <div class="score-val" id="score-p2">0</div>
+                <div class="score-name" style="color: #a9cce3;">Jon</div>
             </div>
         </div>
 
-        <div class="buzzer-area" id="buzzer-area">
-            <button class="buzzer-btn btn-p1" id="btn-p1" onclick="buzz(1)">ME<br><span>(Tap)</span></button>
-            <button class="buzzer-btn btn-p2" id="btn-p2" onclick="buzz(2)">JON<br><span>(Tap)</span></button>
+        <div class="card-area">
+            <div class="card">
+                <div class="timer-track"><div class="timer-fill" id="timer"></div></div>
+                <div class="category-tag" id="category">Loading...</div>
+                
+                <div class="question-text" id="question">
+                    Press "Next" to start the game!
+                </div>
+
+                <div class="answer-box" id="answer">
+                    ANSWER HIDDEN
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-area" id="controls-area">
+            <div class="buzzer-row">
+                <button class="buzzer-btn btn-pauline" id="btn-p1" onclick="handleBuzz(1)">PAULINE</button>
+                <button class="buzzer-btn btn-jon" id="btn-p2" onclick="handleBuzz(2)">JON</button>
+            </div>
+
+            <div class="admin-row">
+                <button class="btn-admin btn-correct" onclick="judge(true)">Correct (+1)</button>
+                <button class="btn-admin btn-wrong" onclick="judge(false)">Wrong (0)</button>
+                <button class="btn-admin btn-skip" onclick="nextQuestion()">Next &rarr;</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // --- DATA ---
-        const triviaData = [
+        /* --- CONFIGURATION & DATA --- 
+           To add more Custom questions, just add to the 'customQuestions' array below.
+           For general trivia, the game fetches from OpenTriviaDB automatically.
+        */
+        
+        const customQuestions = [
             // FRIENDS
-            { cat: "Friends", q: "What is the name of Joey's bedtime penguin pal?", a: "Hugsy" },
-            { cat: "Friends", q: "What creates the conflict when Ross and Rachel break up? (According to Ross)", a: "WE WERE ON A BREAK!" },
-            { cat: "Friends", q: "What is the address Chandler goes to in Yemen to escape Janice?", a: "15 Yemen Road, Yemen" },
-            { cat: "Friends", q: "What food does Joey NOT share?", a: "JOEY DOESN'T SHARE FOOD!" },
-            
+            {cat:"Friends", q:"What is the name of Joey's bedtime penguin?", a:"Hugsy"},
+            {cat:"Friends", q:"What name does Phoebe use as her alter ego?", a:"Regina Phalange"},
+            {cat:"Friends", q:"What is Chandler Bing's middle name?", a:"Muriel"},
+            {cat:"Friends", q:"Which sister did Chandler kiss before dating Monica?", a:"Mary Angela (Joey's sister)"},
+            {cat:"Friends", q:"What is the address Chandler goes to in Yemen?", a:"15 Yemen Road, Yemen"},
             // HIMYM
-            { cat: "HIMYM", q: "What instrument does Ted steal for Robin?", a: "A Blue French Horn" },
-            { cat: "HIMYM", q: "What is Barney's job title? (The acronym)", a: "PLEASE (Provide Legal Exculpation And Sign Everything)" },
-            { cat: "HIMYM", q: "Who is the pop star alter-ego of Robin Scherbatsky?", a: "Robin Sparkles" },
-            { cat: "HIMYM", q: "What is the name of the bar the gang hangs out at?", a: "MacLaren's Pub" },
-
-            // STAR WARS / TREK
-            { cat: "Star Wars", q: "What is the name of the planet where the clones were created?", a: "Kamino" },
-            { cat: "Star Trek", q: "Which alien race operates according to the Rules of Acquisition?", a: "The Ferengi" },
-            
-            // 90s & POP CULTURE
-            { cat: "90s Movies", q: "In 'Jurassic Park', where are they hiding when the raptors open the door?", a: "The Kitchen" },
-            { cat: "90s Music", q: "Finish the lyric: 'Tell me what you want, what you really really want...'", a: "I'll tell you what I want, what I really really want" },
-            { cat: "TV Shows", q: "In 'The Office', what kind of farm does Dwight own?", a: "Beet Farm" },
-            
-            // GENERAL KNOWLEDGE & RANDOM FACTS
-            { cat: "Random Fact", q: "Wombat poop is shaped like what geometric object?", a: "A Cube" },
-            { cat: "Science", q: "What is the only letter that doesn't appear on the periodic table?", a: "J" },
-            { cat: "Geography", q: "Which country has the most islands in the world?", a: "Sweden" },
-            { cat: "Funny Fact", q: "A group of crows is called a murder. What is a group of flamingos called?", a: "A Flamboyance" },
-            { cat: "Food", q: "What is the only food that can never rot?", a: "Honey" },
-            { cat: "History", q: "Who was the shortest US President?", a: "James Madison (5'4\")" },
-            { cat: "Tech", q: "What was the very first video game console?", a: "The Magnavox Odyssey" }
+            {cat:"HIMYM", q:"What instrument does Ted steal for Robin?", a:"Blue French Horn"},
+            {cat:"HIMYM", q:"What is the name of the bar the gang hangs out at?", a:"MacLaren's"},
+            {cat:"HIMYM", q:"What is Barney's job title acronym?", a:"PLEASE"},
+            // STAR WARS
+            {cat:"Star Wars", q:"Who is the only non-Jedi in the original trilogy to use a lightsaber?", a:"Han Solo (Empire Strikes Back)"},
+            {cat:"Star Wars", q:"What species is Admiral Ackbar?", a:"Mon Calamari"},
+            {cat:"Star Wars", q:"What is the name of Boba Fett's ship?", a:"Slave I"},
+            // 90s
+            {cat:"90s TV", q:"Who loves Orange Soda in 'Kenan & Kel'?", a:"Kel loves Orange Soda"},
+            {cat:"90s Toys", q:"Which 90s toy was a furry robotic creature that spoke Furbish?", a:"Furby"},
+            {cat:"90s Music", q:"Who sang 'Genie in a Bottle'?", a:"Christina Aguilera"}
         ];
 
-        // --- STATE ---
-        let deck = [];
+        // --- STATE VARIABLES ---
+        let currentQ = null;
         let p1Score = 0;
         let p2Score = 0;
-        let currentMode = 'standard';
-        let questionCount = 0;
-        let buzzLocked = false;
-        let currentBuzzer = 0; // 0=none, 1=p1, 2=p2
+        let buzzWinner = 0; // 0=none, 1=Pauline, 2=Jon
         let timerInterval;
-        let timeTotal = 30; // seconds
+        let seenQuestions = new Set(); // Stores hashes of asked questions to prevent repeats
+        let apiToken = null; // Token for OpenTDB to prevent repeats server-side
 
         // --- DOM ELEMENTS ---
-        const screens = {
-            menu: document.getElementById('menu-screen'),
-            game: document.getElementById('game-screen')
-        };
-        const els = {
-            p1Score: document.getElementById('p1-score'),
-            p2Score: document.getElementById('p2-score'),
-            cat: document.getElementById('category'),
+        const ui = {
             q: document.getElementById('question'),
             a: document.getElementById('answer'),
-            buzzerArea: document.getElementById('buzzer-area'),
-            admin: document.getElementById('admin-controls'),
-            timer: document.getElementById('timer-bar'),
-            mode: document.getElementById('mode-display')
+            cat: document.getElementById('category'),
+            timer: document.getElementById('timer'),
+            p1Score: document.getElementById('score-p1'),
+            p2Score: document.getElementById('score-p2'),
+            controls: document.getElementById('controls-area'),
+            btnP1: document.getElementById('btn-p1'),
+            btnP2: document.getElementById('btn-p2'),
+            loader: document.getElementById('loader')
         };
 
-        // --- GAME LOGIC ---
-
-        function startGame(mode) {
-            currentMode = mode;
-            p1Score = 0;
-            p2Score = 0;
-            questionCount = 0;
+        // --- INIT ---
+        window.onload = async () => {
+            // Get session token from API to ensure no repeats from their end
+            try {
+                const r = await fetch('https://opentdb.com/api_token.php?command=request');
+                const d = await r.json();
+                if(d.response_code === 0) apiToken = d.token;
+            } catch(e) { console.log("Offline mode"); }
             
-            // Setup Mode Specifics
-            if(mode === 'lightning') {
-                timeTotal = 7; // Fast!
-                els.mode.innerText = "Lightning Round (7s)";
-            } else if (mode === 'bestOf10') {
-                timeTotal = 20;
-                els.mode.innerText = "Best of 10";
+            ui.q.innerText = "Ready? Tap Next to Start!";
+        };
+
+        // --- GAME ENGINE ---
+        
+        async function nextQuestion() {
+            // 1. Reset UI
+            clearInterval(timerInterval);
+            buzzWinner = 0;
+            ui.controls.classList.remove('locked');
+            ui.controls.classList.remove('active-admin');
+            ui.btnP1.classList.remove('winner');
+            ui.btnP2.classList.remove('winner');
+            ui.a.classList.remove('visible');
+            ui.a.innerText = "Loading...";
+            ui.loader.style.display = 'block';
+
+            // 2. Get Question (Mix of Local vs API)
+            // 30% chance of Custom, 70% chance of API
+            const useLocal = Math.random() < 0.3; 
+            
+            if (useLocal) {
+                currentQ = getLocalQuestion();
             } else {
-                timeTotal = 30;
-                els.mode.innerText = "Standard Mode";
+                currentQ = await getApiQuestion();
+                // Fallback to local if API fails
+                if (!currentQ) currentQ = getLocalQuestion(); 
             }
 
-            // Shuffle Deck
-            deck = [...triviaData].sort(() => Math.random() - 0.5);
-
-            // Switch Screen
-            screens.menu.classList.remove('active');
-            screens.game.classList.add('active');
-
-            updateScores();
-            nextQuestion();
-        }
-
-        function nextQuestion() {
-            // Check Win Conditions
-            if (currentMode === 'bestOf10' && questionCount >= 10) {
-                endGame();
-                return;
-            }
-            if (deck.length === 0) {
-                deck = [...triviaData].sort(() => Math.random() - 0.5); // Reshuffle if empty
-            }
-
-            // Reset UI
-            buzzLocked = false;
-            currentBuzzer = 0;
-            els.buzzerArea.classList.remove('locked');
-            document.getElementById('btn-p1').classList.remove('winner');
-            document.getElementById('btn-p2').classList.remove('winner');
-            els.admin.classList.remove('active');
-            els.a.style.display = 'none';
-            els.buzzerArea.style.display = 'flex'; // Show buzzers again
-
-            // Load Question
-            const card = deck.pop();
-            els.cat.innerText = card.cat;
-            els.q.innerText = card.q;
-            els.a.innerText = card.a;
+            // 3. Render
+            ui.loader.style.display = 'none';
+            ui.cat.innerText = currentQ.cat;
             
-            questionCount++;
+            // Decode HTML entities from API (e.g. &quot;)
+            const txt = document.createElement("textarea");
+            txt.innerHTML = currentQ.q;
+            ui.q.innerText = txt.value;
+            
+            txt.innerHTML = currentQ.a;
+            ui.a.innerText = txt.value;
 
-            // Start Timer
+            // 4. Start Timer
             startTimer();
         }
 
+        function getLocalQuestion() {
+            // Simple random pick that hasn't been seen
+            const available = customQuestions.filter(q => !seenQuestions.has(q.q));
+            if (available.length === 0) {
+                // Reset local history if exhausted
+                return customQuestions[Math.floor(Math.random() * customQuestions.length)];
+            }
+            const q = available[Math.floor(Math.random() * available.length)];
+            seenQuestions.add(q.q);
+            return q;
+        }
+
+        async function getApiQuestion() {
+            try {
+                // Categories: 9(Gen), 11(Film), 12(Music), 14(TV), 17(Nature), 18(Computers), 23(History)
+                const cats = [9, 11, 12, 14, 17, 18, 23];
+                const rndCat = cats[Math.floor(Math.random() * cats.length)];
+                
+                let url = `https://opentdb.com/api.php?amount=1&category=${rndCat}&type=multiple`;
+                if(apiToken) url += `&token=${apiToken}`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.results && data.results.length > 0) {
+                    const item = data.results[0];
+                    return {
+                        cat: item.category,
+                        q: item.question,
+                        a: item.correct_answer
+                    };
+                }
+            } catch (error) {
+                console.error("API Error", error);
+            }
+            return null;
+        }
+
+        // --- TIMER LOGIC ---
         function startTimer() {
-            clearInterval(timerInterval);
-            els.timer.style.width = '100%';
-            let timeLeft = timeTotal;
+            let timeLeft = 30;
+            ui.timer.style.width = '100%';
             
             timerInterval = setInterval(() => {
                 timeLeft -= 0.1;
-                const percent = (timeLeft / timeTotal) * 100;
-                els.timer.style.width = `${percent}%`;
-
+                ui.timer.style.width = (timeLeft / 30 * 100) + "%";
+                
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    // Time up! Show answer but no points
-                    revealAnswer();
+                    reveal(false); // Time's up, reveal answer, no winner
                 }
             }, 100);
         }
 
-        function buzz(player) {
-            if (buzzLocked) return;
-            buzzLocked = true;
-            currentBuzzer = player;
-            clearInterval(timerInterval); // Stop timer
-
-            // Visuals
-            els.buzzerArea.classList.add('locked');
-            document.getElementById(`btn-p${player}`).classList.add('winner');
+        // --- INTERACTION ---
+        function handleBuzz(player) {
+            if (buzzWinner !== 0) return; // Already buzzed
             
-            // Show Admin Controls immediately
-            revealAnswer(true);
+            clearInterval(timerInterval);
+            buzzWinner = player;
+            
+            // UI Locking
+            ui.controls.classList.add('locked');
+            ui.controls.classList.add('active-admin'); // Enable admin buttons
+            
+            if (player === 1) ui.btnP1.classList.add('winner');
+            else ui.btnP2.classList.add('winner');
+
+            reveal(true);
         }
 
-        function revealAnswer(buzzed = false) {
-            els.a.style.display = 'block';
-            els.admin.classList.add('active');
-            
-            // If time ran out (no buzz), hide buzzers
-            if (!buzzed) {
-                els.buzzerArea.style.display = 'none';
-                currentBuzzer = 0; // No one gets points
+        function reveal(hasWinner) {
+            ui.a.classList.add('visible');
+            // If time ran out (hasWinner=false), enable admin controls anyway to allow "Next"
+            if (!hasWinner) ui.controls.classList.add('active-admin');
+        }
+
+        function judge(correct) {
+            if (correct && buzzWinner !== 0) {
+                if (buzzWinner === 1) {
+                    p1Score++;
+                    ui.p1Score.innerText = p1Score;
+                } else {
+                    p2Score++;
+                    ui.p2Score.innerText = p2Score;
+                }
+                // Visual feedback?
+                ui.a.style.background = "#2ecc71"; // Brighter green
+            } else if (!correct) {
+                ui.a.style.background = "#e74c3c"; // Red background on wrong
             }
-        }
 
-        function judgeAnswer(isCorrect) {
-            if (isCorrect && currentBuzzer !== 0) {
-                if (currentBuzzer === 1) p1Score++;
-                else p2Score++;
-            }
+            // Small delay then reset background for next question
+            setTimeout(() => {
+                ui.a.style.background = "#27ae60"; 
+            }, 500);
             
-            updateScores();
-            
-            // In Lightning mode, auto-advance after 1s? No, keep manual for verification
-            // nextQuestion(); is called via the "Next" button to allow reading the answer
-        }
-
-        function updateScores() {
-            els.p1Score.innerText = p1Score;
-            els.p2Score.innerText = p2Score;
-        }
-
-        function endGame() {
-            let winner = p1Score > p2Score ? "ME" : "JON";
-            if(p1Score === p2Score) winner = "TIE";
-            
-            alert(`GAME OVER!\nWinner: ${winner}\nFinal Score: ${p1Score} - ${p2Score}`);
-            location.reload(); // Reload to menu
+            // Wait for user to hit "Next" explicitly
         }
 
     </script>
