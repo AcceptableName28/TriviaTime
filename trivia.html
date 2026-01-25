@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jon vs. Me - Trivia Night</title>
+    <style>
+        :root {
+            --p1-color: #3498db;
+            --p2-color: #e74c3c;
+            --bg-color: #2c3e50;
+            --card-bg: #ecf0f1;
+            --text-color: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Scoreboard */
+        .scoreboard {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 15px;
+            color: white;
+        }
+
+        .player-score {
+            text-align: center;
+            padding: 10px 20px;
+            border-radius: 10px;
+            min-width: 100px;
+        }
+
+        .p1-score { border: 2px solid var(--p1-color); }
+        .p2-score { border: 2px solid var(--p2-color); }
+        
+        .active-turn {
+            background-color: rgba(255,255,255,0.2);
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        .score-val { font-size: 2rem; font-weight: bold; }
+        .player-name { font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Game Card */
+        .card {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 600px;
+            min-height: 300px;
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .category {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #95a5a6;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .question {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+
+        .answer-box {
+            display: none;
+            background: #f1c40f;
+            color: #2c3e50;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            width: 80%;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Buttons */
+        button {
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.95); }
+
+        .btn-show {
+            background-color: #27ae60;
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 0 #219150;
+        }
+
+        .scoring-area {
+            display: none; /* Hidden until answer is shown */
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .winner-text {
+            margin-bottom: 10px;
+            font-style: italic;
+            color: #7f8c8d;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-score {
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            min-width: 120px;
+        }
+
+        .btn-p1 { background-color: var(--p1-color); }
+        .btn-p2 { background-color: var(--p2-color); }
+        .btn-none { background-color: #7f8c8d; }
+
+        /* Progress */
+        .progress {
+            margin-top: 20px;
+            color: #95a5a6;
+            font-size: 0.9rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="scoreboard">
+        <div class="player-score p1-score active-turn" id="p1-box">
+            <div class="player-name">Me</div>
+            <div class="score-val" id="score1">0</div>
+        </div>
+        <div style="display:flex; align-items:center; opacity:0.7; font-size:0.8rem;">VS</div>
+        <div class="player-score p2-score" id="p2-box">
+            <div class="player-name">Jon</div>
+            <div class="score-val" id="score2">0</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="category" id="category">Category</div>
+        <div class="question" id="question-text">Loading question...</div>
+        
+        <div class="answer-box" id="answer-text">The Answer</div>
+
+        <button class="btn-show" id="btn-show" onclick="showAnswer()">Show Answer</button>
+
+        <div class="scoring-area" id="scoring-area">
+            <div class="winner-text">Who got it right?</div>
+            <div class="btn-group">
+                <button class="btn-score btn-p1" onclick="handleScore(1)">Me</button>
+                <button class="btn-score btn-p2" onclick="handleScore(2)">Jon</button>
+            </div>
+            <div style="margin-top:10px;">
+                <button class="btn-score btn-none" onclick="handleScore(0)">No One / Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="progress" id="progress">Question 1 of --</div>
+
+    <script>
+        // --- GAME DATA ---
+        // You can add more questions to this list easily!
+        const triviaData = [
+            { cat: "90s Pop Culture", q: "What was the name of the first cloned sheep, born in 1996?", a: "Dolly" },
+            { cat: "Star Wars", q: "In The Phantom Menace, what is the name of Anakin Skywalker's mother?", a: "Shmi Skywalker" },
+            { cat: "Star Trek", q: "What is the designation number of the USS Voyager?", a: "NCC-74656" },
+            { cat: "General Knowledge", q: "Which planet in our solar system is known for rotating on its side?", a: "Uranus" },
+            { cat: "90s Movies", q: "What is the first rule of Fight Club?", a: "You do not talk about Fight Club" },
+            { cat: "Star Wars", q: "What species is Admiral Ackbar?", a: "Mon Calamari" },
+            { cat: "Pop Culture", q: "Which Spice Girl was known as 'Ginger Spice'?", a: "Geri Halliwell" },
+            { cat: "Tech", q: "What does 'HTTP' stand for?", a: "HyperText Transfer Protocol" },
+            { cat: "Star Trek", q: "What is the name of the Klingon homeworld?", a: "Qo'noS (Kronos)" },
+            { cat: "90s Toys", q: "Which digital pet on a keychain was a massive craze in the late 90s?", a: "Tamagotchi" },
+            { cat: "Random Fact", q: "True or False: Bananas are botanically classified as berries.", a: "True" },
+            { cat: "Star Wars", q: "Who shot first in the cantina scene (original theatrical release)?", a: "Han Solo" },
+            { cat: "TV Shows", q: "In 'Friends', what is the name of Ross's monkey?", a: "Marcel" },
+            { cat: "Star Trek", q: "What color is Data's skin?", a: "Gold / Pale Gold" },
+            { cat: "90s Music", q: "Who sang the hit song 'Ironic' in 1996?", a: "Alanis Morissette" },
+            { cat: "Video Games", q: "What is the name of the princess in the Legend of Zelda series?", a: "Zelda (Link is the hero)" },
+            { cat: "Star Wars", q: "What is the name of Boba Fett's ship?", a: "Slave I (or Firespray)" },
+            { cat: "Geography", q: "What is the capital city of Australia?", a: "Canberra" },
+            { cat: "Star Trek", q: "Which Captain loves Earl Grey tea, hot?", a: "Jean-Luc Picard" },
+            { cat: "90s TV", q: "What is the name of the bar in the show 'Cheers'?", a: "Cheers" }
+        ];
+
+        // --- STATE MANAGEMENT ---
+        let questions = [];
+        let currentQIndex = 0;
+        let p1Score = 0;
+        let p2Score = 0;
+        let turn = 1; // 1 for Me, 2 for Jon
+
+        // --- INITIALIZATION ---
+        function initGame() {
+            // Shuffle questions
+            questions = [...triviaData].sort(() => Math.random() - 0.5);
+            currentQIndex = 0;
+            p1Score = 0;
+            p2Score = 0;
+            turn = 1;
+            updateScoreboard();
+            loadQuestion();
+        }
+
+        // --- GAME LOGIC ---
+        function loadQuestion() {
+            if (currentQIndex >= questions.length) {
+                endGame();
+                return;
+            }
+
+            const q = questions[currentQIndex];
+            
+            // UI Reset
+            document.getElementById('category').innerText = q.cat;
+            document.getElementById('question-text').innerText = q.q;
+            document.getElementById('answer-text').innerText = q.a;
+            
+            // Visibility toggles
+            document.getElementById('answer-text').style.display = 'none';
+            document.getElementById('btn-show').style.display = 'block';
+            document.getElementById('scoring-area').style.display = 'none';
+            
+            // Progress
+            document.getElementById('progress').innerText = `Question ${currentQIndex + 1} of ${questions.length}`;
+            
+            updateTurnIndicator();
+        }
+
+        function showAnswer() {
+            document.getElementById('answer-text').style.display = 'block';
+            document.getElementById('btn-show').style.display = 'none';
+            document.getElementById('scoring-area').style.display = 'flex';
+        }
+
+        function handleScore(winner) {
+            if (winner === 1) {
+                p1Score++;
+            } else if (winner === 2) {
+                p2Score++;
+            }
+            // If winner is 0, nobody gets points.
+
+            // Switch turns (Visual only - allows for 'same time' answering)
+            turn = turn === 1 ? 2 : 1;
+
+            updateScoreboard();
+            currentQIndex++;
+            loadQuestion();
+        }
+
+        function updateScoreboard() {
+            document.getElementById('score1').innerText = p1Score;
+            document.getElementById('score2').innerText = p2Score;
+        }
+
+        function updateTurnIndicator() {
+            const p1Box = document.getElementById('p1-box');
+            const p2Box = document.getElementById('p2-box');
+
+            // If it's a "Same Time" question, players can ignore this, 
+            // but this helps track who should read the question if taking turns.
+            if(turn === 1) {
+                p1Box.classList.add('active-turn');
+                p2Box.classList.remove('active-turn');
+            } else {
+                p1Box.classList.remove('active-turn');
+                p2Box.classList.add('active-turn');
+            }
+        }
+
+        function endGame() {
+            document.querySelector('.card').innerHTML = `
+                <h2>Game Over!</h2>
+                <p>Final Score:</p>
+                <h3>Me: ${p1Score} - Jon: ${p2Score}</h3>
+                <button class="btn-show" onclick="location.reload()">Play Again</button>
+            `;
+            document.getElementById('progress').innerText = "";
+        }
+
+        // Start the game on load
+        window.onload = initGame;
+
+    </script>
+</body>
+</html>
