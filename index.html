@@ -1,468 +1,1059 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pauline vs Jon: Trivia Ultimate</title>
-    <style>
-        :root {
-            --p1-color: #8e44ad; /* Pauline (Purple) */
-            --p2-color: #2980b9; /* Jon (Blue) */
-            --bg-color: #2c3e50;
-            --card-bg: #ecf0f1;
-            --accent: #f1c40f;
-            --text: #2c3e50;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pauline vs Jon: Trivia Ultimate</title>
+  <style>
+    :root {
+      --p1-color: #8e44ad; /* Pauline (Purple) */
+      --p2-color: #2980b9; /* Jon (Blue) */
+      --bg-color: #2c3e50;
+      --card-bg: #ecf0f1;
+      --accent: #f1c40f;
+      --text: #2c3e50;
+    }
 
-        * { box-sizing: border-box; touch-action: manipulation; }
+    * { box-sizing: border-box; touch-action: manipulation; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-        /* --- LAYOUT GRID --- */
-        .game-container {
-            display: grid;
-            grid-template-rows: 60px 1fr 160px; /* Header | Card | Controls */
-            height: 100%;
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-        }
+    /* --- LAYOUT GRID --- */
+    .game-container {
+      display: grid;
+      grid-template-rows: 60px 1fr 200px; /* Header | Card | Controls */
+      height: 100%;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+    }
 
-        /* --- HEADER (SCORES) --- */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 15px;
-            background: rgba(0,0,0,0.2);
-            color: white;
-        }
-        
-        .score-box {
-            text-align: center;
-            min-width: 70px;
-        }
-        .score-val { font-size: 1.8rem; font-weight: 800; line-height: 1; }
-        .score-name { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
-        
-        .round-info {
-            font-size: 0.8rem;
-            opacity: 0.6;
-            text-align: center;
-        }
+    /* --- HEADER (SCORES) --- */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 15px;
+      background: rgba(0,0,0,0.2);
+      color: white;
+    }
 
-        /* --- MAIN CARD AREA --- */
-        .card-area {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
+    .score-box { text-align: center; min-width: 70px; }
+    .score-val { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+    .score-name { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
 
-        .card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 25px;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center; /* Center content vertically */
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            text-align: center;
-            position: relative;
-            overflow-y: auto;
-        }
+    .round-info {
+      font-size: 0.8rem;
+      opacity: 0.85;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .round-sub { opacity: 0.72; font-size: 0.72rem; }
 
-        .category-tag {
-            background: #95a5a6;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            margin-bottom: 15px;
-            position: absolute;
-            top: 20px;
-        }
+    /* --- MAIN CARD AREA --- */
+    .card-area {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
 
-        .question-text {
-            font-size: 1.4rem;
-            font-weight: 700;
-            line-height: 1.3;
-            margin-bottom: 20px;
-            margin-top: 20px;
-        }
+    .card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 25px;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      text-align: center;
+      position: relative;
+      overflow-y: auto;
+    }
 
-        .answer-box {
-            background: #27ae60;
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            width: 90%;
-            font-size: 1.2rem;
-            font-weight: bold;
-            opacity: 0; /* Hidden by default but takes up space */
-            transition: opacity 0.3s;
-        }
-        .answer-box.visible { opacity: 1; }
+    .category-tag {
+      background: #95a5a6;
+      color: white;
+      padding: 5px 12px;
+      border-radius: 15px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      margin-bottom: 15px;
+      position: absolute;
+      top: 20px;
+    }
 
-        /* --- TIMER --- */
-        .timer-track {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 8px;
-            background: rgba(0,0,0,0.1);
-        }
-        .timer-fill {
-            height: 100%;
-            width: 100%;
-            background: var(--accent);
-            transition: width 1s linear;
-        }
+    .question-text {
+      font-size: 1.4rem;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 18px;
+      margin-top: 20px;
+    }
 
-        /* --- CONTROLS (FIXED BOTTOM) --- */
-        .controls-area {
-            background: rgba(0,0,0,0.3);
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+    .answer-box {
+      background: #27ae60;
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      width: 92%;
+      font-size: 1.2rem;
+      font-weight: bold;
+      opacity: 0;
+      transition: opacity 0.25s;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .answer-box.visible { opacity: 1; }
 
-        /* BUZZER ROW */
-        .buzzer-row {
-            display: flex;
-            gap: 10px;
-            flex: 1;
-        }
-        
-        .buzzer-btn {
-            flex: 1;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.2rem;
-            font-weight: 800;
-            color: white;
-            cursor: pointer;
-            position: relative;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-            transition: transform 0.1s;
-        }
-        
-        .btn-pauline { background-color: var(--p1-color); }
-        .btn-jon { background-color: var(--p2-color); }
+    /* --- TIMER --- */
+    .timer-track {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 8px;
+      background: rgba(0,0,0,0.1);
+    }
+    .timer-fill {
+      height: 100%;
+      width: 100%;
+      background: var(--accent);
+      transition: width 0.1s linear;
+    }
 
-        .buzzer-btn:active { transform: translateY(4px); box-shadow: none; }
-        
-        /* Locked State */
-        .controls-area.locked .buzzer-btn { opacity: 0.3; pointer-events: none; }
-        .controls-area.locked .buzzer-btn.winner { opacity: 1; transform: scale(1.02); box-shadow: 0 0 15px white; }
+    /* --- CONTROLS (FIXED BOTTOM) --- */
+    .controls-area {
+      background: rgba(0,0,0,0.3);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
 
-        /* ADMIN ROW */
-        .admin-row {
-            display: flex;
-            gap: 10px;
-            height: 50px;
-            opacity: 0.3; /* Dimmed until buzzer pressed */
-            pointer-events: none; /* Disabled until buzzer */
-        }
-        .controls-area.active-admin .admin-row { opacity: 1; pointer-events: all; }
+    /* SETTINGS ROW */
+    .settings-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-        .btn-admin {
-            flex: 1;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            color: white;
-            font-size: 1rem;
-        }
-        .btn-correct { background: #27ae60; }
-        .btn-wrong { background: #c0392b; }
-        .btn-skip { background: #7f8c8d; }
+    .settings-row select, .settings-row button {
+      height: 40px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 800;
+      color: white;
+      background: rgba(255,255,255,0.14);
+      padding: 0 10px;
+      font-size: 0.85rem;
+      flex: 1;
+    }
 
-        /* LOADING SPINNER */
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--accent);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            display: none;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .settings-row select {
+      color: #fff;
+      appearance: none;
+      -webkit-appearance: none;
+      background: rgba(255,255,255,0.14);
+    }
 
-    </style>
+    .btn-toggle-on { background: rgba(241,196,15,0.65) !important; color: #1f2d3a !important; }
+    .btn-mini { flex: 0.9; }
+    .btn-mini2 { flex: 0.7; }
+
+    /* BUZZER ROW */
+    .buzzer-row {
+      display: flex;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .buzzer-btn {
+      flex: 1;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: white;
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+      transition: transform 0.1s;
+      height: 56px;
+    }
+
+    .btn-pauline { background-color: var(--p1-color); }
+    .btn-jon { background-color: var(--p2-color); }
+
+    .buzzer-btn:active { transform: translateY(4px); box-shadow: none; }
+
+    /* Locked State */
+    .controls-area.locked .buzzer-btn { opacity: 0.3; pointer-events: none; }
+    .controls-area.locked .buzzer-btn.winner { opacity: 1; transform: scale(1.02); box-shadow: 0 0 15px white; }
+
+    /* ADMIN ROW */
+    .admin-row {
+      display: flex;
+      gap: 10px;
+      height: 52px;
+      opacity: 0.25;
+      pointer-events: none;
+    }
+    .controls-area.active-admin .admin-row { opacity: 1; pointer-events: all; }
+
+    .btn-admin {
+      flex: 1;
+      border: none;
+      border-radius: 10px;
+      font-weight: 900;
+      color: white;
+      font-size: 0.95rem;
+    }
+    .btn-correct { background: #27ae60; }
+    .btn-wrong { background: #c0392b; }
+    .btn-skip { background: #7f8c8d; }
+    .btn-show { background: #f39c12; color: #1f2d3a; }
+
+    /* META ROW */
+    .meta-row {
+      display: flex;
+      gap: 10px;
+      height: 46px;
+    }
+
+    .meta-btn {
+      flex: 1;
+      border: none;
+      border-radius: 10px;
+      font-weight: 900;
+      font-size: 0.85rem;
+      color: white;
+      background: rgba(255,255,255,0.14);
+    }
+
+    .meta-btn.danger { background: rgba(231,76,60,0.65); }
+    .meta-btn.good { background: rgba(46,204,113,0.55); color: #1f2d3a; }
+    .meta-btn.pause { background: rgba(52,152,219,0.55); color: #102232; }
+
+    /* LOADING SPINNER */
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid var(--accent);
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      animation: spin 1s linear infinite;
+      display: none;
+      margin: 6px auto 0;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* Small toast */
+    .toast {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 18px;
+      background: rgba(0,0,0,0.85);
+      color: white;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      max-width: 92vw;
+      display: none;
+      z-index: 9999;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
 
-    <div class="game-container">
-        <div class="header">
-            <div class="score-box">
-                <div class="score-val" id="score-p1">0</div>
-                <div class="score-name" style="color: #d2b4de;">Pauline</div>
-            </div>
-            
-            <div class="round-info">
-                <div id="mode-text">MIXED MODE</div>
-                <div class="loader" id="loader"></div>
-            </div>
-
-            <div class="score-box">
-                <div class="score-val" id="score-p2">0</div>
-                <div class="score-name" style="color: #a9cce3;">Jon</div>
-            </div>
-        </div>
-
-        <div class="card-area">
-            <div class="card">
-                <div class="timer-track"><div class="timer-fill" id="timer"></div></div>
-                <div class="category-tag" id="category">Loading...</div>
-                
-                <div class="question-text" id="question">
-                    Press "Next" to start the game!
-                </div>
-
-                <div class="answer-box" id="answer">
-                    ANSWER HIDDEN
-                </div>
-            </div>
-        </div>
-
-        <div class="controls-area" id="controls-area">
-            <div class="buzzer-row">
-                <button class="buzzer-btn btn-pauline" id="btn-p1" onclick="handleBuzz(1)">PAULINE</button>
-                <button class="buzzer-btn btn-jon" id="btn-p2" onclick="handleBuzz(2)">JON</button>
-            </div>
-
-            <div class="admin-row">
-                <button class="btn-admin btn-correct" onclick="judge(true)">Correct (+1)</button>
-                <button class="btn-admin btn-wrong" onclick="judge(false)">Wrong (0)</button>
-                <button class="btn-admin btn-skip" onclick="nextQuestion()">Next &rarr;</button>
-            </div>
-        </div>
+<div class="game-container">
+  <div class="header">
+    <div class="score-box">
+      <div class="score-val" id="score-p1">0</div>
+      <div class="score-name" style="color: #d2b4de;">Pauline</div>
     </div>
 
-    <script>
-        /* --- CONFIGURATION & DATA --- 
-           To add more Custom questions, just add to the 'customQuestions' array below.
-           For general trivia, the game fetches from OpenTriviaDB automatically.
-        */
-        
-        const customQuestions = [
-            // FRIENDS
-            {cat:"Friends", q:"What is the name of Joey's bedtime penguin?", a:"Hugsy"},
-            {cat:"Friends", q:"What name does Phoebe use as her alter ego?", a:"Regina Phalange"},
-            {cat:"Friends", q:"What is Chandler Bing's middle name?", a:"Muriel"},
-            {cat:"Friends", q:"Which sister did Chandler kiss before dating Monica?", a:"Mary Angela (Joey's sister)"},
-            {cat:"Friends", q:"What is the address Chandler goes to in Yemen?", a:"15 Yemen Road, Yemen"},
-            // HIMYM
-            {cat:"HIMYM", q:"What instrument does Ted steal for Robin?", a:"Blue French Horn"},
-            {cat:"HIMYM", q:"What is the name of the bar the gang hangs out at?", a:"MacLaren's"},
-            {cat:"HIMYM", q:"What is Barney's job title acronym?", a:"PLEASE"},
-            // STAR WARS
-            {cat:"Star Wars", q:"Who is the only non-Jedi in the original trilogy to use a lightsaber?", a:"Han Solo (Empire Strikes Back)"},
-            {cat:"Star Wars", q:"What species is Admiral Ackbar?", a:"Mon Calamari"},
-            {cat:"Star Wars", q:"What is the name of Boba Fett's ship?", a:"Slave I"},
-            // 90s
-            {cat:"90s TV", q:"Who loves Orange Soda in 'Kenan & Kel'?", a:"Kel loves Orange Soda"},
-            {cat:"90s Toys", q:"Which 90s toy was a furry robotic creature that spoke Furbish?", a:"Furby"},
-            {cat:"90s Music", q:"Who sang 'Genie in a Bottle'?", a:"Christina Aguilera"}
-        ];
+    <div class="round-info">
+      <div id="mode-text">LOADING…</div>
+      <div class="round-sub" id="sub-text">Starting fast load…</div>
+      <div class="loader" id="loader"></div>
+    </div>
 
-        // --- STATE VARIABLES ---
-        let currentQ = null;
-        let p1Score = 0;
-        let p2Score = 0;
-        let buzzWinner = 0; // 0=none, 1=Pauline, 2=Jon
-        let timerInterval;
-        let seenQuestions = new Set(); // Stores hashes of asked questions to prevent repeats
-        let apiToken = null; // Token for OpenTDB to prevent repeats server-side
+    <div class="score-box">
+      <div class="score-val" id="score-p2">0</div>
+      <div class="score-name" style="color: #a9cce3;">Jon</div>
+    </div>
+  </div>
 
-        // --- DOM ELEMENTS ---
-        const ui = {
-            q: document.getElementById('question'),
-            a: document.getElementById('answer'),
-            cat: document.getElementById('category'),
-            timer: document.getElementById('timer'),
-            p1Score: document.getElementById('score-p1'),
-            p2Score: document.getElementById('score-p2'),
-            controls: document.getElementById('controls-area'),
-            btnP1: document.getElementById('btn-p1'),
-            btnP2: document.getElementById('btn-p2'),
-            loader: document.getElementById('loader')
-        };
+  <div class="card-area">
+    <div class="card">
+      <div class="timer-track"><div class="timer-fill" id="timer"></div></div>
+      <div class="category-tag" id="category">Loading...</div>
 
-        // --- INIT ---
-        window.onload = async () => {
-            // Get session token from API to ensure no repeats from their end
-            try {
-                const r = await fetch('https://opentdb.com/api_token.php?command=request');
-                const d = await r.json();
-                if(d.response_code === 0) apiToken = d.token;
-            } catch(e) { console.log("Offline mode"); }
-            
-            ui.q.innerText = "Ready? Tap Next to Start!";
-        };
+      <div class="question-text" id="question">
+        Loading…
+      </div>
 
-        // --- GAME ENGINE ---
-        
-        async function nextQuestion() {
-            // 1. Reset UI
-            clearInterval(timerInterval);
-            buzzWinner = 0;
-            ui.controls.classList.remove('locked');
-            ui.controls.classList.remove('active-admin');
-            ui.btnP1.classList.remove('winner');
-            ui.btnP2.classList.remove('winner');
-            ui.a.classList.remove('visible');
-            ui.a.innerText = "Loading...";
-            ui.loader.style.display = 'block';
+      <div class="answer-box" id="answer">
+        ANSWER HIDDEN
+      </div>
+    </div>
+  </div>
 
-            // 2. Get Question (Mix of Local vs API)
-            // 30% chance of Custom, 70% chance of API
-            const useLocal = Math.random() < 0.3; 
-            
-            if (useLocal) {
-                currentQ = getLocalQuestion();
-            } else {
-                currentQ = await getApiQuestion();
-                // Fallback to local if API fails
-                if (!currentQ) currentQ = getLocalQuestion(); 
-            }
+  <div class="controls-area" id="controls-area">
 
-            // 3. Render
-            ui.loader.style.display = 'none';
-            ui.cat.innerText = currentQ.cat;
-            
-            // Decode HTML entities from API (e.g. &quot;)
-            const txt = document.createElement("textarea");
-            txt.innerHTML = currentQ.q;
-            ui.q.innerText = txt.value;
-            
-            txt.innerHTML = currentQ.a;
-            ui.a.innerText = txt.value;
+    <div class="settings-row">
+      <select id="category-select" aria-label="Category">
+        <option value="mixed" selected>MIXED</option>
+        <option value="custom">CUSTOM (Friends/HIMYM/90s/SW)</option>
+        <option value="gen">GENERAL</option>
+        <option value="tv">TV</option>
+        <option value="movies">MOVIES</option>
+        <option value="music">MUSIC</option>
+        <option value="science">SCIENCE</option>
+        <option value="history">HISTORY</option>
+        <option value="computers">COMPUTERS</option>
+      </select>
+      <button id="btn-random" class="btn-mini">RANDOM: OFF</button>
+      <button id="btn-best10" class="btn-mini2">BEST10: OFF</button>
+    </div>
 
-            // 4. Start Timer
-            startTimer();
+    <div class="buzzer-row">
+      <button class="buzzer-btn btn-pauline" id="btn-p1">PAULINE</button>
+      <button class="buzzer-btn btn-jon" id="btn-p2">JON</button>
+    </div>
+
+    <div class="admin-row">
+      <button class="btn-admin btn-show" id="btn-show">Show Answer</button>
+      <button class="btn-admin btn-correct" id="btn-correct">Correct (+1)</button>
+      <button class="btn-admin btn-wrong" id="btn-wrong">Wrong (0)</button>
+      <button class="btn-admin btn-skip" id="btn-next">Next →</button>
+    </div>
+
+    <div class="meta-row">
+      <button class="meta-btn danger" id="btn-undo">Undo</button>
+      <button class="meta-btn pause" id="btn-pause">Pause</button>
+      <button class="meta-btn good" id="btn-reset">Reset</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  /* QC checklist created & applied internally (not shown, per request). */
+
+  // FAST LOAD + BACKGROUND TARGETS
+  const FAST_MIXED_TARGET = 200;      // load immediately
+  const FAST_CAT_TARGET = 80;         // per category immediate
+  const BACKGROUND_MIXED_TARGET = 1000;
+  const BACKGROUND_CAT_TARGET = 250;
+
+  // OpenTDB fetch controls
+  const API_BATCH_SIZE = 50;
+  const API_TIMEOUT_MS = 8000;
+
+  // Best of 10 (ALWAYS 10)
+  const BEST10_MAX_Q = 10;
+
+  // Timer
+  const QUESTION_SECONDS = 30;
+  const TICK_MS = 100;
+
+  // Custom pack (expand anytime)
+  const customQuestions = [
+    // FRIENDS
+    {cat:"Friends", q:"What is the name of Joey's bedtime penguin?", a:"Hugsy"},
+    {cat:"Friends", q:"What name does Phoebe use as her alter ego?", a:"Regina Phalange"},
+    {cat:"Friends", q:"What is Chandler Bing's middle name?", a:"Muriel"},
+    {cat:"Friends", q:"Which sister did Chandler kiss before dating Monica?", a:"Mary Angela (Joey's sister)"},
+    {cat:"Friends", q:"What is the address Chandler goes to in Yemen?", a:"15 Yemen Road, Yemen"},
+    // HIMYM
+    {cat:"HIMYM", q:"What instrument does Ted steal for Robin?", a:"Blue French Horn"},
+    {cat:"HIMYM", q:"What is the name of the bar the gang hangs out at?", a:"MacLaren's"},
+    {cat:"HIMYM", q:"What is Barney's job title acronym?", a:"PLEASE"},
+    // STAR WARS
+    {cat:"Star Wars", q:"Who is the only non-Jedi in the original trilogy to use a lightsaber?", a:"Han Solo (Empire Strikes Back)"},
+    {cat:"Star Wars", q:"What species is Admiral Ackbar?", a:"Mon Calamari"},
+    {cat:"Star Wars", q:"What is the name of Boba Fett's ship?", a:"Slave I"},
+    // 90s
+    {cat:"90s TV", q:"Who loves Orange Soda in 'Kenan & Kel'?", a:"Kel loves Orange Soda"},
+    {cat:"90s Toys", q:"Which 90s toy was a furry robotic creature that spoke Furbish?", a:"Furby"},
+    {cat:"90s Music", q:"Who sang 'Genie in a Bottle'?", a:"Christina Aguilera"}
+  ];
+
+  // OpenTDB category ids for picker
+  const OTD_CATS = {
+    gen: 9,
+    movies: 11,
+    music: 12,
+    tv: 14,
+    science: 17,
+    computers: 18,
+    history: 23
+  };
+
+  // DOM
+  const ui = {
+    q: document.getElementById('question'),
+    a: document.getElementById('answer'),
+    cat: document.getElementById('category'),
+    timer: document.getElementById('timer'),
+    p1Score: document.getElementById('score-p1'),
+    p2Score: document.getElementById('score-p2'),
+    controls: document.getElementById('controls-area'),
+    btnP1: document.getElementById('btn-p1'),
+    btnP2: document.getElementById('btn-p2'),
+    loader: document.getElementById('loader'),
+    modeText: document.getElementById('mode-text'),
+    subText: document.getElementById('sub-text'),
+    toast: document.getElementById('toast'),
+
+    catSelect: document.getElementById('category-select'),
+    btnRandom: document.getElementById('btn-random'),
+    btnBest10: document.getElementById('btn-best10'),
+
+    btnShow: document.getElementById('btn-show'),
+    btnCorrect: document.getElementById('btn-correct'),
+    btnWrong: document.getElementById('btn-wrong'),
+    btnNext: document.getElementById('btn-next'),
+
+    btnUndo: document.getElementById('btn-undo'),
+    btnPause: document.getElementById('btn-pause'),
+    btnReset: document.getElementById('btn-reset')
+  };
+
+  // STATE
+  let apiToken = null;
+
+  // Banks (deduped within themselves)
+  const banks = new Map();          // key -> array
+  const bankKeys = new Map();       // key -> Set(keys in that bank)
+  const working = new Map();        // key -> shuffled working copy
+
+  // Played no-repeat (this is the real "no repeat" guard)
+  const playedKeys = new Set();
+
+  let currentQ = null;
+  let p1Score = 0;
+  let p2Score = 0;
+
+  let buzzWinner = 0; // 0 none, 1 Pauline, 2 Jon
+  let answerRevealed = false;
+
+  let timerInterval = null;
+  let timeLeft = QUESTION_SECONDS;
+  let paused = false;
+
+  let randomCategory = false;
+
+  // Best of 10
+  let best10Enabled = false;
+  let matchQCount = 0;
+  let matchLocked = false;
+
+  // Undo stack (last scoring action)
+  const undoStack = [];
+
+  // HELPERS
+  function toast(msg){
+    ui.toast.textContent = msg;
+    ui.toast.style.display = 'block';
+    clearTimeout(ui.toast._t);
+    ui.toast._t = setTimeout(() => ui.toast.style.display = 'none', 1400);
+  }
+
+  function shuffle(arr){
+    for (let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function decodeHtml(str){
+    const txt = document.createElement("textarea");
+    txt.innerHTML = str;
+    return txt.value;
+  }
+
+  function makeKey(qObj){
+    const q = (qObj.q || "").trim().toLowerCase();
+    const a = (qObj.a || "").trim().toLowerCase();
+    const c = (qObj.cat || "").trim().toLowerCase();
+    return `${c}||${q}||${a}`;
+  }
+
+  function fetchWithTimeout(url, ms){
+    return new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error("timeout")), ms);
+      fetch(url, { cache: "no-store" })
+        .then(r => { clearTimeout(t); resolve(r); })
+        .catch(e => { clearTimeout(t); reject(e); });
+    });
+  }
+
+  function setLoading(isLoading, top, sub){
+    ui.loader.style.display = isLoading ? 'block' : 'none';
+    if (top) ui.modeText.textContent = top;
+    if (sub) ui.subText.textContent = sub;
+  }
+
+  function setControlsLocked(lockBuzzers){
+    if (lockBuzzers) ui.controls.classList.add('locked');
+    else ui.controls.classList.remove('locked');
+  }
+
+  function setAdminActive(active){
+    if (active) ui.controls.classList.add('active-admin');
+    else ui.controls.classList.remove('active-admin');
+  }
+
+  function setAnswerVisible(visible){
+    answerRevealed = visible;
+    if (visible) ui.a.classList.add('visible');
+    else ui.a.classList.remove('visible');
+  }
+
+  function resetWinnerUI(){
+    buzzWinner = 0;
+    ui.btnP1.classList.remove('winner');
+    ui.btnP2.classList.remove('winner');
+  }
+
+  function updateScores(){
+    ui.p1Score.textContent = String(p1Score);
+    ui.p2Score.textContent = String(p2Score);
+  }
+
+  function best10StatusText(){
+    if (!best10Enabled) return "NORMAL MODE";
+    if (matchLocked) return "BEST OF 10 (FINISHED)";
+    return `BEST OF 10 • Q ${matchQCount}/${BEST10_MAX_Q}`;
+  }
+
+  function currentSelectedCategory(){
+    if (!randomCategory) return ui.catSelect.value;
+    const opts = Array.from(ui.catSelect.options).map(o => o.value);
+    return opts[Math.floor(Math.random() * opts.length)];
+  }
+
+  function ensureBank(key){
+    if (!banks.has(key)) banks.set(key, []);
+    if (!bankKeys.has(key)) bankKeys.set(key, new Set());
+  }
+
+  function addToBank(bankKey, items){
+    ensureBank(bankKey);
+    const arr = banks.get(bankKey);
+    const keys = bankKeys.get(bankKey);
+
+    for (const qObj of items){
+      const k = makeKey(qObj);
+      if (!keys.has(k)){
+        keys.add(k);
+        arr.push(qObj);
+      }
+    }
+  }
+
+  function resetWorkingDeck(key){
+    const src = banks.get(key) || [];
+    working.set(key, shuffle(src.slice()));
+  }
+
+  function pickFromWorkingDeck(key){
+    if (!working.has(key)) resetWorkingDeck(key);
+
+    const deck = working.get(key);
+    while (deck.length){
+      const qObj = deck.shift();
+      const k = makeKey(qObj);
+      if (playedKeys.has(k)) continue;
+      playedKeys.add(k);
+      return qObj;
+    }
+    return null;
+  }
+
+  function getNextQuestion(){
+    const sel = currentSelectedCategory();
+
+    // chosen
+    let qObj = pickFromWorkingDeck(sel);
+
+    // fallback to mixed
+    if (!qObj && sel !== "mixed"){
+      toast("Category empty — using Mixed");
+      qObj = pickFromWorkingDeck("mixed");
+    }
+
+    return qObj;
+  }
+
+  function resetForNewQuestion(){
+    clearInterval(timerInterval);
+    paused = false;
+    ui.btnPause.textContent = "Pause";
+
+    resetWinnerUI();
+    setControlsLocked(false);
+    setAdminActive(true);          // Next/Show always available
+    setAnswerVisible(false);
+
+    ui.a.style.background = "#27ae60";
+    ui.a.textContent = "ANSWER HIDDEN";
+    ui.timer.style.width = "100%";
+  }
+
+  function renderQuestion(qObj){
+    currentQ = qObj;
+    ui.cat.textContent = qObj.cat || "Trivia";
+    ui.q.textContent = qObj.q || "—";
+    ui.a.textContent = qObj.a || "—";
+    setAnswerVisible(false);
+  }
+
+  function startTimer(){
+    clearInterval(timerInterval);
+    timeLeft = QUESTION_SECONDS;
+    ui.timer.style.width = "100%";
+
+    timerInterval = setInterval(() => {
+      if (paused) return;
+
+      timeLeft -= (TICK_MS / 1000);
+      const pct = Math.max(0, (timeLeft / QUESTION_SECONDS) * 100);
+      ui.timer.style.width = pct + "%";
+
+      if (timeLeft <= 0){
+        clearInterval(timerInterval);
+        // time up: lock buzzers, do NOT reveal answer
+        setControlsLocked(true);
+        setAdminActive(true);
+        toast("Time!");
+      }
+    }, TICK_MS);
+  }
+
+  function endBest10Match(){
+    matchLocked = true;
+    setControlsLocked(true);
+    setAdminActive(true);
+    setAnswerVisible(true);
+
+    ui.cat.textContent = "Match Over";
+
+    let msg = "🤝 Tie game!";
+    if (p1Score > p2Score) msg = "🏆 Pauline wins Best of 10!";
+    if (p2Score > p1Score) msg = "🏆 Jon wins Best of 10!";
+
+    ui.q.textContent = msg;
+    ui.a.textContent = "Tap Reset to play again.";
+    ui.timer.style.width = "0%";
+    toast("Match finished");
+  }
+
+  function nextQuestion(){
+    if (matchLocked){
+      toast("Match finished — Reset");
+      return;
+    }
+
+    // If Best of 10 and already served 10, end instead of serving 11th
+    if (best10Enabled && matchQCount >= BEST10_MAX_Q){
+      endBest10Match();
+      return;
+    }
+
+    // Count question when we SERVE it
+    if (best10Enabled) matchQCount++;
+
+    resetForNewQuestion();
+
+    const qObj = getNextQuestion();
+    if (!qObj){
+      ui.cat.textContent = "DONE";
+      ui.q.textContent = "No more unique questions available in this session.";
+      ui.a.textContent = "Refresh to rebuild a new session bank.";
+      setAnswerVisible(true);
+      setControlsLocked(true);
+      setAdminActive(true);
+      clearInterval(timerInterval);
+      return;
+    }
+
+    renderQuestion(qObj);
+    ui.modeText.textContent = best10StatusText();
+    startTimer();
+  }
+
+  function handleBuzz(player){
+    if (paused) return;
+    if (!currentQ) return;
+    if (buzzWinner !== 0) return;
+    if (ui.controls.classList.contains('locked')) return;
+
+    buzzWinner = player;
+    clearInterval(timerInterval);
+
+    setControlsLocked(true);
+    setAdminActive(true);
+
+    if (player === 1) ui.btnP1.classList.add('winner');
+    else ui.btnP2.classList.add('winner');
+
+    toast(player === 1 ? "Pauline buzzed!" : "Jon buzzed!");
+  }
+
+  function showAnswer(){
+    if (!currentQ) return;
+    setAnswerVisible(true);
+  }
+
+  function pushUndo(){
+    undoStack.push({
+      p1Score, p2Score,
+      matchQCount, matchLocked, best10Enabled,
+      buzzWinner, answerRevealed
+    });
+    if (undoStack.length > 10) undoStack.shift();
+  }
+
+  function judge(correct){
+    if (!currentQ) return;
+    pushUndo();
+
+    if (correct && buzzWinner !== 0){
+      if (buzzWinner === 1) p1Score++;
+      else p2Score++;
+      updateScores();
+      ui.a.style.background = "#2ecc71";
+      toast("Point awarded");
+    } else {
+      ui.a.style.background = "#e74c3c";
+      toast(correct ? "No buzz — no point" : "Marked wrong");
+    }
+
+    setTimeout(() => { ui.a.style.background = "#27ae60"; }, 450);
+
+    // If Best of 10 and we just judged question #10, the NEXT press ends match (by design)
+    ui.modeText.textContent = best10StatusText();
+  }
+
+  function undo(){
+    const last = undoStack.pop();
+    if (!last){ toast("Nothing to undo"); return; }
+
+    p1Score = last.p1Score;
+    p2Score = last.p2Score;
+    matchQCount = last.matchQCount;
+    matchLocked = last.matchLocked;
+    best10Enabled = last.best10Enabled;
+    buzzWinner = last.buzzWinner;
+
+    updateScores();
+    ui.modeText.textContent = best10StatusText();
+
+    setAnswerVisible(last.answerRevealed);
+    ui.btnP1.classList.toggle('winner', buzzWinner === 1);
+    ui.btnP2.classList.toggle('winner', buzzWinner === 2);
+
+    toast("Undone");
+  }
+
+  function togglePause(){
+    if (!currentQ){ toast("Start a question first"); return; }
+    paused = !paused;
+    ui.btnPause.textContent = paused ? "Resume" : "Pause";
+
+    if (paused){
+      setControlsLocked(true);
+      setAdminActive(true);
+      toast("Paused");
+    } else {
+      // Only re-enable buzzers if no one buzzed and time remains
+      if (buzzWinner === 0 && timeLeft > 0){
+        setControlsLocked(false);
+      }
+      toast("Resumed");
+    }
+  }
+
+  function toggleRandom(){
+    randomCategory = !randomCategory;
+    ui.btnRandom.textContent = randomCategory ? "RANDOM: ON" : "RANDOM: OFF";
+    ui.btnRandom.classList.toggle("btn-toggle-on", randomCategory);
+    toast(randomCategory ? "Random category ON" : "Random category OFF");
+  }
+
+  function toggleBest10(){
+    best10Enabled = !best10Enabled;
+    matchQCount = 0;
+    matchLocked = false;
+
+    ui.btnBest10.textContent = best10Enabled ? "BEST10: ON" : "BEST10: OFF";
+    ui.btnBest10.classList.toggle("btn-toggle-on", best10Enabled);
+
+    ui.modeText.textContent = best10StatusText();
+    toast(best10Enabled ? "Best of 10 ON" : "Best of 10 OFF");
+  }
+
+  function resetAll(){
+    clearInterval(timerInterval);
+
+    paused = false;
+    ui.btnPause.textContent = "Pause";
+
+    p1Score = 0; p2Score = 0;
+    updateScores();
+
+    resetWinnerUI();
+    setAnswerVisible(false);
+    undoStack.length = 0;
+
+    best10Enabled = false;
+    matchQCount = 0;
+    matchLocked = false;
+    ui.btnBest10.textContent = "BEST10: OFF";
+    ui.btnBest10.classList.remove("btn-toggle-on");
+
+    ui.controls.classList.remove('locked');
+    ui.controls.classList.add('active-admin');
+
+    ui.timer.style.width = "100%";
+    ui.cat.textContent = "Ready";
+    ui.q.textContent = 'Tap "Next →" to start!';
+    ui.a.textContent = "ANSWER HIDDEN";
+
+    // reset played (new session experience)
+    playedKeys.clear();
+
+    // reset decks (keep fetched banks, but reshuffle)
+    for (const key of working.keys()) working.delete(key);
+
+    ui.modeText.textContent = "NORMAL MODE";
+    ui.subText.textContent = "Ready";
+    toast("Reset");
+  }
+
+  // NETWORK / BANK LOADING
+  async function getToken(){
+    try {
+      const r = await fetchWithTimeout('https://opentdb.com/api_token.php?command=request', API_TIMEOUT_MS);
+      const d = await r.json();
+      if (d.response_code === 0) return d.token;
+    } catch(e){}
+    return null;
+  }
+
+  async function fetchBatch(categoryId){
+    let url = `https://opentdb.com/api.php?amount=${API_BATCH_SIZE}&type=multiple`;
+    if (categoryId) url += `&category=${categoryId}`;
+    if (apiToken) url += `&token=${apiToken}`;
+
+    const res = await fetchWithTimeout(url, API_TIMEOUT_MS);
+    const data = await res.json();
+
+    // token empty -> reset and return empty
+    if (data.response_code === 4 && apiToken){
+      try {
+        const rr = await fetchWithTimeout(`https://opentdb.com/api_token.php?command=reset&token=${apiToken}`, API_TIMEOUT_MS);
+        await rr.json();
+      } catch(e){}
+      return [];
+    }
+
+    if (!data.results || !data.results.length) return [];
+    return data.results.map(item => ({
+      cat: decodeHtml(item.category || "Trivia"),
+      q: decodeHtml(item.question),
+      a: decodeHtml(item.correct_answer)
+    }));
+  }
+
+  async function fastLoad(){
+    // init banks
+    ensureBank("mixed");
+    ensureBank("custom");
+    ensureBank("gen"); ensureBank("tv"); ensureBank("movies"); ensureBank("music");
+    ensureBank("science"); ensureBank("history"); ensureBank("computers");
+
+    // custom bank
+    addToBank("custom", customQuestions);
+    addToBank("mixed", customQuestions);
+
+    // if offline, finish now
+    if (!apiToken){
+      setLoading(false, "OFFLINE MODE", `Loaded ${banks.get("mixed").length} custom`);
+      resetWorkingDeck("mixed");
+      resetWorkingDeck("custom");
+      ui.controls.classList.add('active-admin');
+      ui.controls.classList.remove('locked');
+      ui.cat.textContent = "Ready";
+      ui.q.textContent = 'Tap "Next →" to start!';
+      ui.a.textContent = "ANSWER HIDDEN";
+      setAnswerVisible(false);
+      return;
+    }
+
+    // fast build mixed to ~200
+    const mixedIds = Object.values(OTD_CATS);
+    while (banks.get("mixed").length < FAST_MIXED_TARGET){
+      setLoading(true, "LOADING…", `Fast load mixed ${banks.get("mixed").length}/${FAST_MIXED_TARGET}`);
+      const rnd = mixedIds[Math.floor(Math.random() * mixedIds.length)];
+      try {
+        addToBank("mixed", await fetchBatch(rnd));
+      } catch(e){
+        break;
+      }
+    }
+
+    // fast build category decks (~80 each)
+    const catList = [
+      ["gen", OTD_CATS.gen],
+      ["tv", OTD_CATS.tv],
+      ["movies", OTD_CATS.movies],
+      ["music", OTD_CATS.music],
+      ["science", OTD_CATS.science],
+      ["history", OTD_CATS.history],
+      ["computers", OTD_CATS.computers]
+    ];
+
+    for (const [key, id] of catList){
+      while ((banks.get(key).length || 0) < FAST_CAT_TARGET){
+        setLoading(true, "LOADING…", `Fast load ${key.toUpperCase()} ${(banks.get(key).length || 0)}/${FAST_CAT_TARGET}`);
+        try {
+          addToBank(key, await fetchBatch(id));
+        } catch(e){
+          break;
         }
+      }
+    }
 
-        function getLocalQuestion() {
-            // Simple random pick that hasn't been seen
-            const available = customQuestions.filter(q => !seenQuestions.has(q.q));
-            if (available.length === 0) {
-                // Reset local history if exhausted
-                return customQuestions[Math.floor(Math.random() * customQuestions.length)];
-            }
-            const q = available[Math.floor(Math.random() * available.length)];
-            seenQuestions.add(q.q);
-            return q;
+    // ready to play
+    setLoading(false, "NORMAL MODE", `Ready • Mixed ${banks.get("mixed").length} loaded`);
+    ui.controls.classList.add('active-admin');
+    ui.controls.classList.remove('locked');
+
+    ui.cat.textContent = "Ready";
+    ui.q.textContent = 'Tap "Next →" to start!';
+    ui.a.textContent = "ANSWER HIDDEN";
+    setAnswerVisible(false);
+
+    // working decks
+    resetWorkingDeck("mixed");
+    resetWorkingDeck("custom");
+    resetWorkingDeck("gen"); resetWorkingDeck("tv"); resetWorkingDeck("movies"); resetWorkingDeck("music");
+    resetWorkingDeck("science"); resetWorkingDeck("history"); resetWorkingDeck("computers");
+  }
+
+  async function backgroundFill(){
+    if (!apiToken) return;
+
+    const mixedIds = Object.values(OTD_CATS);
+    const catList = [
+      ["gen", OTD_CATS.gen],
+      ["tv", OTD_CATS.tv],
+      ["movies", OTD_CATS.movies],
+      ["music", OTD_CATS.music],
+      ["science", OTD_CATS.science],
+      ["history", OTD_CATS.history],
+      ["computers", OTD_CATS.computers]
+    ];
+
+    // loop quietly
+    while (true){
+      // fill mixed to 1000
+      if ((banks.get("mixed").length || 0) < BACKGROUND_MIXED_TARGET){
+        ui.subText.textContent = `Fetching more… Mixed ${(banks.get("mixed").length || 0)}/${BACKGROUND_MIXED_TARGET}`;
+        const rnd = mixedIds[Math.floor(Math.random() * mixedIds.length)];
+        try {
+          addToBank("mixed", await fetchBatch(rnd));
+          // refresh working deck only if user hasn't started consuming too deeply:
+          // (safe: just append; no need to reshuffle actively)
+        } catch(e){}
+      }
+
+      // fill category decks to 250
+      for (const [key, id] of catList){
+        if ((banks.get(key).length || 0) < BACKGROUND_CAT_TARGET){
+          ui.subText.textContent = `Fetching more… ${key.toUpperCase()} ${(banks.get(key).length || 0)}/${BACKGROUND_CAT_TARGET}`;
+          try { addToBank(key, await fetchBatch(id)); } catch(e){}
         }
+      }
 
-        async function getApiQuestion() {
-            try {
-                // Categories: 9(Gen), 11(Film), 12(Music), 14(TV), 17(Nature), 18(Computers), 23(History)
-                const cats = [9, 11, 12, 14, 17, 18, 23];
-                const rndCat = cats[Math.floor(Math.random() * cats.length)];
-                
-                let url = `https://opentdb.com/api.php?amount=1&category=${rndCat}&type=multiple`;
-                if(apiToken) url += `&token=${apiToken}`;
+      // done
+      const mixedDone = (banks.get("mixed").length || 0) >= BACKGROUND_MIXED_TARGET;
+      const catsDone = catList.every(([k]) => (banks.get(k).length || 0) >= BACKGROUND_CAT_TARGET);
 
-                const response = await fetch(url);
-                const data = await response.json();
-                
-                if (data.results && data.results.length > 0) {
-                    const item = data.results[0];
-                    return {
-                        cat: item.category,
-                        q: item.question,
-                        a: item.correct_answer
-                    };
-                }
-            } catch (error) {
-                console.error("API Error", error);
-            }
-            return null;
-        }
+      if (mixedDone && catsDone){
+        ui.subText.textContent = `Fully loaded • Mixed ${banks.get("mixed").length} • Categories ready`;
+        break;
+      }
 
-        // --- TIMER LOGIC ---
-        function startTimer() {
-            let timeLeft = 30;
-            ui.timer.style.width = '100%';
-            
-            timerInterval = setInterval(() => {
-                timeLeft -= 0.1;
-                ui.timer.style.width = (timeLeft / 30 * 100) + "%";
-                
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    reveal(false); // Time's up, reveal answer, no winner
-                }
-            }, 100);
-        }
+      // idle pause between cycles (prevents hammering the API)
+      await new Promise(r => setTimeout(r, 800));
+    }
+  }
 
-        // --- INTERACTION ---
-        function handleBuzz(player) {
-            if (buzzWinner !== 0) return; // Already buzzed
-            
-            clearInterval(timerInterval);
-            buzzWinner = player;
-            
-            // UI Locking
-            ui.controls.classList.add('locked');
-            ui.controls.classList.add('active-admin'); // Enable admin buttons
-            
-            if (player === 1) ui.btnP1.classList.add('winner');
-            else ui.btnP2.classList.add('winner');
+  // EVENTS
+  ui.btnP1.addEventListener("click", () => handleBuzz(1));
+  ui.btnP2.addEventListener("click", () => handleBuzz(2));
 
-            reveal(true);
-        }
+  ui.btnShow.addEventListener("click", showAnswer);
+  ui.btnCorrect.addEventListener("click", () => judge(true));
+  ui.btnWrong.addEventListener("click", () => judge(false));
+  ui.btnNext.addEventListener("click", nextQuestion);
 
-        function reveal(hasWinner) {
-            ui.a.classList.add('visible');
-            // If time ran out (hasWinner=false), enable admin controls anyway to allow "Next"
-            if (!hasWinner) ui.controls.classList.add('active-admin');
-        }
+  ui.btnUndo.addEventListener("click", undo);
+  ui.btnPause.addEventListener("click", togglePause);
+  ui.btnReset.addEventListener("click", resetAll);
 
-        function judge(correct) {
-            if (correct && buzzWinner !== 0) {
-                if (buzzWinner === 1) {
-                    p1Score++;
-                    ui.p1Score.innerText = p1Score;
-                } else {
-                    p2Score++;
-                    ui.p2Score.innerText = p2Score;
-                }
-                // Visual feedback?
-                ui.a.style.background = "#2ecc71"; // Brighter green
-            } else if (!correct) {
-                ui.a.style.background = "#e74c3c"; // Red background on wrong
-            }
+  ui.btnRandom.addEventListener("click", toggleRandom);
+  ui.btnBest10.addEventListener("click", toggleBest10);
 
-            // Small delay then reset background for next question
-            setTimeout(() => {
-                ui.a.style.background = "#27ae60"; 
-            }, 500);
-            
-            // Wait for user to hit "Next" explicitly
-        }
+  ui.catSelect.addEventListener("change", () => {
+    toast("Category set");
+  });
 
-    </script>
+  // INIT
+  async function init(){
+    setLoading(true, "LOADING…", "Getting trivia token");
+    apiToken = await getToken();
+
+    setLoading(true, "LOADING…", "Fast loading question bank");
+    await fastLoad();
+
+    // start background fill after the UI is ready
+    setTimeout(() => { backgroundFill(); }, 400);
+  }
+
+  init();
+})();
+</script>
+
 </body>
 </html>
