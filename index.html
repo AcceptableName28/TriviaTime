@@ -1,424 +1,651 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Trivia Ultimate</title>
   <style>
-    :root {
-      --p1-color: #8e44ad; /* Player 1 (Purple) */
-      --p2-color: #2980b9; /* Player 2 (Blue) */
-      --bg-color: #2c3e50;
-      --card-bg: #ecf0f1;
-      --accent: #f1c40f;
-      --text: #2c3e50;
+    :root{
+      --p1-color:#8e44ad;
+      --p2-color:#2980b9;
+      --bg:#2c3e50;
+      --card:#ecf0f1;
+      --accent:#f1c40f;
+      --text:#1f2d3a;
+      --muted: rgba(255,255,255,0.14);
+    }
+    *{box-sizing:border-box; touch-action: manipulation;}
+    body{
+      margin:0; padding:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      height:100vh;
+      overflow:hidden;
+      display:flex;
+      justify-content:center;
+    }
+    .game-container{
+      width:100%;
+      max-width:600px;
+      height:100vh;
+      display:grid;
+      grid-template-rows: 56px 1fr 240px;
     }
 
-    * { box-sizing: border-box; touch-action: manipulation; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text);
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
+    /* HEADER */
+    .header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 10px;
+      background: rgba(0,0,0,0.22);
+      color:#fff;
     }
-
-    /* --- LAYOUT GRID --- */
-    .game-container {
-      display: grid;
-      grid-template-rows: 60px 1fr 210px; /* Header | Card | Controls */
-      height: 100%;
-      width: 100%;
-      max-width: 600px;
-      margin: 0 auto;
+    .score-box{min-width:72px; text-align:center;}
+    .score-val{font-size:1.65rem; font-weight:950; line-height:1;}
+    .score-name{font-size:0.72rem; font-weight:900; letter-spacing:1px; opacity:0.9; text-transform:uppercase;}
+    .center-info{
+      text-align:center;
+      line-height:1.1;
+      width:52%;
+      max-width:280px;
+      padding:0 6px;
     }
-
-    /* --- HEADER (SCORES) --- */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 15px;
-      background: rgba(0,0,0,0.2);
-      color: white;
-    }
-
-    .score-box { text-align: center; min-width: 70px; }
-    .score-val { font-size: 1.8rem; font-weight: 800; line-height: 1; }
-    .score-name { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.85; }
-
-    .round-info {
-      font-size: 0.8rem;
-      opacity: 0.9;
-      text-align: center;
-      line-height: 1.2;
-    }
-    .round-sub { opacity: 0.72; font-size: 0.72rem; }
-
-    /* --- MAIN CARD AREA --- */
-    .card-area {
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      position: relative;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border-radius: 20px;
-      padding: 25px;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-      text-align: center;
-      position: relative;
-      overflow-y: auto;
-      gap: 12px;
-    }
-
-    .category-tag {
-      background: #95a5a6;
-      color: white;
-      padding: 5px 12px;
-      border-radius: 15px;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-      position: sticky;
-      top: 0;
-      align-self: center;
-    }
-
-    .question-text {
-      font-size: 1.35rem;
-      font-weight: 800;
-      line-height: 1.25;
-      margin: 0;
-      padding: 0 4px;
-    }
-
-    .options-wrap {
-      width: 100%;
-      display: none; /* Only shown for MC questions */
-      gap: 10px;
-      padding: 2px 0 0;
-      flex-direction: column;
-    }
-
-    .option-btn {
-      width: 100%;
-      border: none;
-      border-radius: 12px;
-      padding: 12px 12px;
-      font-weight: 900;
-      font-size: 0.98rem;
-      text-align: left;
-      background: rgba(44,62,80,0.10);
-      color: #1d2b38;
-      box-shadow: 0 3px 0 rgba(0,0,0,0.08);
-    }
-
-    .option-label {
-      display: inline-block;
-      min-width: 30px;
-      font-weight: 1000;
-      color: rgba(44,62,80,0.85);
-    }
-
-    .option-btn.correct {
-      background: rgba(46,204,113,0.25);
-      box-shadow: 0 0 0 2px rgba(46,204,113,0.45) inset;
-    }
-
-    .answer-box {
-      background: #27ae60;
-      color: white;
-      padding: 14px;
-      border-radius: 12px;
-      width: 92%;
-      font-size: 1.05rem;
-      font-weight: 900;
-      opacity: 0;
-      transition: opacity 0.25s;
-      min-height: 52px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-top: auto;
-    }
-    .answer-box.visible { opacity: 1; }
-
-    /* --- TIMER --- */
-    .timer-track {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 8px;
-      background: rgba(0,0,0,0.1);
-    }
-    .timer-fill {
-      height: 100%;
-      width: 100%;
-      background: var(--accent);
-      transition: width 0.1s linear;
-    }
-
-    /* --- CONTROLS (FIXED BOTTOM) --- */
-    .controls-area {
-      background: rgba(0,0,0,0.3);
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    /* SETTINGS ROW */
-    .settings-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .settings-row select, .settings-row button {
-      height: 40px;
-      border-radius: 10px;
-      border: none;
-      font-weight: 900;
-      color: white;
-      background: rgba(255,255,255,0.14);
-      padding: 0 10px;
-      font-size: 0.82rem;
-    }
-
-    .settings-row select {
-      flex: 1.35;
-      color: #fff;
-      appearance: none;
-      -webkit-appearance: none;
-      background: rgba(255,255,255,0.14);
-    }
-
-    .btn-mini { flex: 0.85; }
-    .btn-mini2 { flex: 0.7; }
-    .btn-toggle-on { background: rgba(241,196,15,0.65) !important; color: #1f2d3a !important; }
-
-    /* BUZZER ROW */
-    .buzzer-row {
-      display: flex;
-      gap: 10px;
-      flex: 1;
-    }
-
-    .buzzer-btn {
-      flex: 1;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.2rem;
-      font-weight: 1000;
-      color: white;
-      cursor: pointer;
-      position: relative;
-      box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-      transition: transform 0.1s;
-      height: 56px;
-      text-transform: uppercase;
-    }
-
-    .btn-p1 { background-color: var(--p1-color); }
-    .btn-p2 { background-color: var(--p2-color); }
-
-    .buzzer-btn:active { transform: translateY(4px); box-shadow: none; }
-
-    /* Locked State */
-    .controls-area.locked .buzzer-btn { opacity: 0.3; pointer-events: none; }
-    .controls-area.locked .buzzer-btn.winner { opacity: 1; transform: scale(1.02); box-shadow: 0 0 15px white; }
-
-    /* ADMIN ROW */
-    .admin-row {
-      display: flex;
-      gap: 10px;
-      height: 52px;
-      opacity: 0.25;
-      pointer-events: none;
-    }
-    .controls-area.active-admin .admin-row { opacity: 1; pointer-events: all; }
-
-    .btn-admin {
-      flex: 1;
-      border: none;
-      border-radius: 10px;
-      font-weight: 1000;
-      color: white;
-      font-size: 0.92rem;
-    }
-    .btn-correct { background: #27ae60; }
-    .btn-wrong { background: #c0392b; }
-    .btn-next { background: #7f8c8d; }
-    .btn-show { background: #f39c12; color: #1f2d3a; }
-
-    /* META ROW */
-    .meta-row {
-      display: flex;
-      gap: 10px;
-      height: 46px;
-    }
-
-    .meta-btn {
-      flex: 1;
-      border: none;
-      border-radius: 10px;
-      font-weight: 1000;
-      font-size: 0.85rem;
-      color: white;
-      background: rgba(255,255,255,0.14);
-    }
-
-    .meta-btn.danger { background: rgba(231,76,60,0.65); }
-    .meta-btn.good { background: rgba(46,204,113,0.55); color: #102232; }
-    .meta-btn.pause { background: rgba(52,152,219,0.55); color: #102232; }
-
-    /* LOADING SPINNER */
-    .loader {
-      border: 4px solid #f3f3f3;
+    #mode-text{font-size:0.82rem; font-weight:950;}
+    #sub-text{font-size:0.70rem; opacity:0.75; margin-top:2px;}
+    .loader{
+      border: 4px solid rgba(255,255,255,0.2);
       border-top: 4px solid var(--accent);
-      border-radius: 50%;
-      width: 22px;
-      height: 22px;
-      animation: spin 1s linear infinite;
-      display: none;
-      margin: 6px auto 0;
+      border-radius:50%;
+      width:18px; height:18px;
+      animation:spin 1s linear infinite;
+      display:none;
+      margin:6px auto 0;
     }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes spin{to{transform:rotate(360deg)}}
 
-    /* Toast */
-    .toast {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 18px;
-      background: rgba(0,0,0,0.85);
-      color: white;
-      padding: 10px 12px;
-      border-radius: 12px;
-      font-weight: 900;
-      font-size: 0.9rem;
-      max-width: 92vw;
-      display: none;
-      z-index: 9999;
-      text-align: center;
+    /* CARD */
+    .card-area{
+      padding:10px 10px;
+      display:flex;
+      justify-content:center;
+      align-items:stretch;
+      min-height:0;
     }
+    .card{
+      width:100%;
+      background:var(--card);
+      border-radius:18px;
+      box-shadow:0 10px 25px rgba(0,0,0,0.28);
+      padding:12px 12px 12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      position:relative;
+      overflow:auto;
+    }
+    .timer-track{position:absolute; top:0; left:0; width:100%; height:7px; background:rgba(0,0,0,0.08);}
+    .timer-fill{height:100%; width:100%; background:var(--accent); transition:width 0.1s linear;}
+    .category-tag{
+      align-self:center;
+      margin-top:6px;
+      background:#95a5a6;
+      color:#fff;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:0.70rem;
+      font-weight:950;
+      text-transform:uppercase;
+    }
+    .question-text{
+      font-size:1.18rem;
+      font-weight:1000;
+      line-height:1.25;
+      margin:0;
+      padding:0 2px;
+      text-align:center;
+    }
+
+    /* options */
+    .options-wrap{
+      display:none;
+      gap:8px;
+      flex-direction:column;
+      width:100%;
+      margin-top:2px;
+    }
+    .option-btn{
+      border:none;
+      border-radius:12px;
+      padding:11px 12px;
+      background: rgba(44,62,80,0.10);
+      color:#1d2b38;
+      font-weight:950;
+      font-size:0.95rem;
+      text-align:left;
+      box-shadow:0 3px 0 rgba(0,0,0,0.08);
+    }
+    .option-btn:active{transform: translateY(2px);}
+    .opt-label{
+      display:inline-block;
+      min-width:28px;
+      font-weight:1000;
+      opacity:0.85;
+    }
+    .option-btn.locked{
+      background: rgba(241,196,15,0.26);
+      box-shadow: 0 0 0 2px rgba(241,196,15,0.55) inset;
+    }
+    .option-btn.correct{
+      background: rgba(46,204,113,0.28);
+      box-shadow: 0 0 0 2px rgba(46,204,113,0.55) inset;
+    }
+
+    .answer-box{
+      background:#27ae60;
+      color:#fff;
+      padding:12px 12px;
+      border-radius:12px;
+      width:100%;
+      font-size:1.02rem;
+      font-weight:950;
+      opacity:0;
+      transition:opacity 0.25s;
+      min-height:48px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin-top:auto;
+      text-align:center;
+    }
+    .answer-box.visible{opacity:1;}
+
+    /* CONTROLS */
+    .controls-area{
+      background: rgba(0,0,0,0.3);
+      padding:10px 10px 12px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .row{
+      display:flex;
+      gap:8px;
+      width:100%;
+      flex-wrap:wrap;
+    }
+    select, button{
+      border:none;
+      border-radius:10px;
+      font-weight:950;
+    }
+    .select{
+      height:40px;
+      background:var(--muted);
+      color:#fff;
+      padding:0 10px;
+      flex: 1 1 160px;
+      appearance:none;
+      -webkit-appearance:none;
+      font-size:0.82rem;
+    }
+    .btn{
+      height:40px;
+      background:var(--muted);
+      color:#fff;
+      padding:0 10px;
+      font-size:0.82rem;
+      flex: 1 1 110px;
+    }
+    .btn.on{background: rgba(241,196,15,0.70); color:#14212c;}
+    .btn.small{flex: 1 1 90px;}
+    .btn.tiny{flex: 1 1 80px;}
+
+    .buzzer-row{display:flex; gap:10px;}
+    .buzzer{
+      flex:1;
+      height:54px;
+      color:#fff;
+      font-size:1.15rem;
+      font-weight:1000;
+      text-transform:uppercase;
+      border-radius:12px;
+      box-shadow:0 4px 0 rgba(0,0,0,0.22);
+    }
+    .buzzer:active{transform: translateY(4px); box-shadow:none;}
+    .b1{background:var(--p1-color);}
+    .b2{background:var(--p2-color);}
+
+    .controls-area.locked .buzzer{opacity:0.35; pointer-events:none;}
+    .controls-area.locked .buzzer.winner{opacity:1; box-shadow:0 0 14px rgba(255,255,255,0.75);}
+
+    .admin-row{display:flex; gap:8px; opacity:0.3; pointer-events:none;}
+    .controls-area.active-admin .admin-row{opacity:1; pointer-events:all;}
+    .admin{
+      flex:1;
+      height:46px;
+      font-size:0.92rem;
+      font-weight:1000;
+      border-radius:10px;
+      color:#fff;
+    }
+    .show{background:#f39c12; color:#1f2d3a;}
+    .correct{background:#27ae60;}
+    .wrong{background:#c0392b;}
+    .next{background:#7f8c8d;}
+
+    .meta-row{display:flex; gap:8px;}
+    .meta{
+      flex:1;
+      height:44px;
+      font-size:0.84rem;
+      font-weight:1000;
+      border-radius:10px;
+      color:#fff;
+      background: rgba(255,255,255,0.14);
+    }
+    .danger{background: rgba(231,76,60,0.65);}
+    .pause{background: rgba(52,152,219,0.55); color:#122231;}
+    .good{background: rgba(46,204,113,0.55); color:#122231;}
+
+    .toast{
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:16px;
+      background:rgba(0,0,0,0.86);
+      color:#fff;
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:950;
+      font-size:0.9rem;
+      display:none;
+      max-width:92vw;
+      text-align:center;
+      z-index:9999;
+    }
+
+    /* Lightning overlay */
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:10000;
+      padding:18px;
+    }
+    .overlay-card{
+      width:min(520px, 94vw);
+      background:#fff;
+      border-radius:16px;
+      padding:14px;
+      box-shadow:0 18px 45px rgba(0,0,0,0.35);
+      text-align:center;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .overlay-title{
+      font-weight:1000;
+      font-size:1.0rem;
+      color:#14212c;
+    }
+    .overlay-sub{
+      font-weight:900;
+      font-size:0.85rem;
+      opacity:0.75;
+    }
+    .overlay-row{
+      display:flex;
+      gap:10px;
+    }
+    .overlay-btn{
+      flex:1;
+      border:none;
+      border-radius:12px;
+      padding:12px 10px;
+      font-weight:1000;
+      font-size:0.95rem;
+      color:#fff;
+      box-shadow:0 4px 0 rgba(0,0,0,0.18);
+    }
+    .overlay-btn:active{transform: translateY(3px); box-shadow:none;}
+    .overlay-p1{background:var(--p1-color);}
+    .overlay-p2{background:var(--p2-color);}
+    .overlay-none{background:#7f8c8d;}
   </style>
 </head>
 <body>
+  <div class="game-container">
+    <div class="header">
+      <div class="score-box">
+        <div class="score-val" id="score-p1">0</div>
+        <div class="score-name" id="name-p1" style="color:#d2b4de">PAULINE</div>
+      </div>
 
-<div class="game-container">
-  <div class="header">
-    <div class="score-box">
-      <div class="score-val" id="score-p1">0</div>
-      <div class="score-name" id="name-p1" style="color: #d2b4de;">Pauline</div>
+      <div class="center-info">
+        <div id="mode-text">READY</div>
+        <div id="sub-text">Custom questions now • Online loading…</div>
+        <div class="loader" id="loader"></div>
+      </div>
+
+      <div class="score-box">
+        <div class="score-val" id="score-p2">0</div>
+        <div class="score-name" id="name-p2" style="color:#a9cce3">JON</div>
+      </div>
     </div>
 
-    <div class="round-info">
-      <div id="mode-text">READY</div>
-      <div class="round-sub" id="sub-text">Custom questions available now • Online loading…</div>
-      <div class="loader" id="loader"></div>
+    <div class="card-area">
+      <div class="card" id="card">
+        <div class="timer-track"><div class="timer-fill" id="timer"></div></div>
+        <div class="category-tag" id="category">CUSTOM</div>
+        <p class="question-text" id="question">Tap “Next →” to start!</p>
+        <div class="options-wrap" id="options"></div>
+        <div class="answer-box" id="answer">ANSWER HIDDEN</div>
+      </div>
     </div>
 
-    <div class="score-box">
-      <div class="score-val" id="score-p2">0</div>
-      <div class="score-name" id="name-p2" style="color: #a9cce3;">Jon</div>
+    <div class="controls-area" id="controls">
+      <!-- Settings row -->
+      <div class="row">
+        <select class="select" id="categorySelect" aria-label="Category">
+          <option value="mixed" selected>MIXED</option>
+          <option value="custom">CUSTOM (Friends/HIMYM/Star Wars/90s)</option>
+          <option value="pop">POP CULTURE</option>
+          <option value="80s">1980s</option>
+          <option value="90s">1990s</option>
+          <option value="2000s">2000s</option>
+          <option value="disney">DISNEY</option>
+          <option value="ww2">WORLD WAR 2</option>
+          <option value="tv">TV</option>
+          <option value="movies">MOVIES</option>
+          <option value="music">MUSIC</option>
+          <option value="science">SCIENCE</option>
+          <option value="history">HISTORY</option>
+          <option value="computers">COMPUTERS</option>
+        </select>
+
+        <button class="btn small" id="randomBtn">RANDOM: OFF</button>
+        <button class="btn tiny" id="best10Btn">BEST10</button>
+        <button class="btn tiny" id="lightningBtn">LIGHTNING</button>
+        <button class="btn tiny" id="namesBtn">NAMES</button>
+      </div>
+
+      <!-- Toggles row -->
+      <div class="row">
+        <button class="btn" id="stealBtn">STEAL: OFF</button>
+
+        <select class="select" id="difficultySelect" aria-label="Difficulty">
+          <option value="easy">DIFFICULTY: EASY</option>
+          <option value="medium" selected>DIFFICULTY: MEDIUM</option>
+          <option value="hard">DIFFICULTY: HARD</option>
+        </select>
+
+        <button class="btn" id="sfxBtn">SFX: ON</button>
+      </div>
+
+      <!-- Buzzers -->
+      <div class="buzzer-row">
+        <button class="buzzer b1" id="b1">PAULINE</button>
+        <button class="buzzer b2" id="b2">JON</button>
+      </div>
+
+      <!-- Admin -->
+      <div class="admin-row" id="adminRow">
+        <button class="admin show" id="showBtn">Show Answer</button>
+        <button class="admin correct" id="correctBtn">Correct (+1)</button>
+        <button class="admin wrong" id="wrongBtn">Wrong (0)</button>
+        <button class="admin next" id="nextBtn">Next →</button>
+      </div>
+
+      <!-- Meta -->
+      <div class="meta-row">
+        <button class="meta danger" id="undoBtn">Undo</button>
+        <button class="meta pause" id="pauseBtn">Pause</button>
+        <button class="meta good" id="resetBtn">Reset</button>
+      </div>
     </div>
   </div>
 
-  <div class="card-area">
-    <div class="card">
-      <div class="timer-track"><div class="timer-fill" id="timer"></div></div>
-      <div class="category-tag" id="category">Custom</div>
+  <div class="toast" id="toast"></div>
 
-      <p class="question-text" id="question">Tap “Next →” to start!</p>
-
-      <div class="options-wrap" id="options"></div>
-
-      <div class="answer-box" id="answer">ANSWER HIDDEN</div>
+  <!-- Lightning "Who answered?" overlay -->
+  <div class="overlay" id="overlay">
+    <div class="overlay-card">
+      <div class="overlay-title" id="overlayTitle">Who answered?</div>
+      <div class="overlay-sub" id="overlaySub">Tap the winner (or No Score)</div>
+      <div class="overlay-row">
+        <button class="overlay-btn overlay-p1" id="overlayP1">Player 1</button>
+        <button class="overlay-btn overlay-p2" id="overlayP2">Player 2</button>
+      </div>
+      <div class="overlay-row">
+        <button class="overlay-btn overlay-none" id="overlayNone">No Score</button>
+      </div>
     </div>
   </div>
-
-  <div class="controls-area" id="controls-area">
-
-    <div class="settings-row">
-      <select id="category-select" aria-label="Category">
-        <option value="mixed" selected>MIXED</option>
-        <option value="custom">CUSTOM (Friends/HIMYM/90s/SW)</option>
-        <option value="gen">GENERAL</option>
-        <option value="tv">TV</option>
-        <option value="movies">MOVIES</option>
-        <option value="music">MUSIC</option>
-        <option value="science">SCIENCE</option>
-        <option value="history">HISTORY</option>
-        <option value="computers">COMPUTERS</option>
-      </select>
-      <button id="btn-random" class="btn-mini">RANDOM: OFF</button>
-      <button id="btn-best10" class="btn-mini2">BEST10: OFF</button>
-      <button id="btn-names" class="btn-mini2">NAMES</button>
-    </div>
-
-    <div class="buzzer-row">
-      <button class="buzzer-btn btn-p1" id="btn-p1">PAULINE</button>
-      <button class="buzzer-btn btn-p2" id="btn-p2">JON</button>
-    </div>
-
-    <div class="admin-row">
-      <button class="btn-admin btn-show" id="btn-show">Show Answer</button>
-      <button class="btn-admin btn-correct" id="btn-correct">Correct (+1)</button>
-      <button class="btn-admin btn-wrong" id="btn-wrong">Wrong (0)</button>
-      <button class="btn-admin btn-next" id="btn-next">Next →</button>
-    </div>
-
-    <div class="meta-row">
-      <button class="meta-btn danger" id="btn-undo">Undo</button>
-      <button class="meta-btn pause" id="btn-pause">Pause</button>
-      <button class="meta-btn good" id="btn-reset">Reset</button>
-    </div>
-
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
 
 <script>
 (() => {
   /* QC checklist created & applied internally (not shown, per request). */
 
-  // --- FAST LOAD + BACKGROUND LOAD ---
-  const FAST_MIXED_TARGET = 80;       // smaller so "online ready" happens faster
-  const FAST_CAT_TARGET = 40;         // smaller for quick category readiness
-  const BACKGROUND_MIXED_TARGET = 1000;
-  const BACKGROUND_CAT_TARGET = 250;
-
-  // OpenTDB
-  const API_BATCH_SIZE = 50;
-  const API_TIMEOUT_MS = 7000;
-
-  // Best of 10 (ALWAYS 10)
-  const BEST10_MAX_Q = 10;
-
-  // Timer
+  // ------------ CONFIG ------------
   const QUESTION_SECONDS = 30;
   const TICK_MS = 100;
 
-  // OpenTDB category ids
+  const BEST10_MAX_Q = 10;
+
+  // Lightning
+  const LIGHTNING_SECONDS = 60;
+
+  // OpenTDB
+  const API_TIMEOUT_MS = 7000;
+  const API_BATCH_SIZE = 30;
+  const FAST_WARMUP_BATCHES = 2;
+
+  // Names
+  const NAME_KEY = "trivia_names_v3";
+
+  // ------------ UI ------------
+  const ui = {
+    score1: document.getElementById("score-p1"),
+    score2: document.getElementById("score-p2"),
+    name1: document.getElementById("name-p1"),
+    name2: document.getElementById("name-p2"),
+    modeText: document.getElementById("mode-text"),
+    subText: document.getElementById("sub-text"),
+    loader: document.getElementById("loader"),
+
+    cat: document.getElementById("category"),
+    q: document.getElementById("question"),
+    options: document.getElementById("options"),
+    a: document.getElementById("answer"),
+    timer: document.getElementById("timer"),
+
+    controls: document.getElementById("controls"),
+    adminRow: document.getElementById("adminRow"),
+
+    categorySelect: document.getElementById("categorySelect"),
+    randomBtn: document.getElementById("randomBtn"),
+    best10Btn: document.getElementById("best10Btn"),
+    lightningBtn: document.getElementById("lightningBtn"),
+    namesBtn: document.getElementById("namesBtn"),
+    stealBtn: document.getElementById("stealBtn"),
+    difficultySelect: document.getElementById("difficultySelect"),
+    sfxBtn: document.getElementById("sfxBtn"),
+
+    b1: document.getElementById("b1"),
+    b2: document.getElementById("b2"),
+
+    showBtn: document.getElementById("showBtn"),
+    correctBtn: document.getElementById("correctBtn"),
+    wrongBtn: document.getElementById("wrongBtn"),
+    nextBtn: document.getElementById("nextBtn"),
+
+    undoBtn: document.getElementById("undoBtn"),
+    pauseBtn: document.getElementById("pauseBtn"),
+    resetBtn: document.getElementById("resetBtn"),
+
+    toast: document.getElementById("toast"),
+
+    overlay: document.getElementById("overlay"),
+    overlayTitle: document.getElementById("overlayTitle"),
+    overlaySub: document.getElementById("overlaySub"),
+    overlayP1: document.getElementById("overlayP1"),
+    overlayP2: document.getElementById("overlayP2"),
+    overlayNone: document.getElementById("overlayNone")
+  };
+
+  // ------------ STATE ------------
+  let names = { p1:"Pauline", p2:"Jon" };
+
+  let apiToken = null;
+
+  let p1Score = 0;
+  let p2Score = 0;
+
+  let currentQ = null; // {cat, q, type, a, options[], correctIndex}
+  let buzzWinner = 0;  // 0 none, 1 p1, 2 p2
+  let lockedGuessIndex = null;
+
+  let timerInterval = null;
+  let timeLeft = QUESTION_SECONDS;
+  let paused = false;
+
+  let randomCategory = false;
+  let stealMode = false;
+  let sfxOn = true;
+
+  // Best of 10
+  let best10Enabled = false;
+  let matchQCount = 0;
+  let matchLocked = false;
+  let suddenDeath = false;
+
+  // Lightning
+  let lightningEnabled = false;
+  let lightningTimeLeft = LIGHTNING_SECONDS;
+  let lightningInterval = null;
+
+  // Lightning overlay pending
+  let lightningPendingCorrect = null;
+
+  // Undo
+  const undoStack = [];
+
+  // No repeat keys
+  const playedKeys = new Set();
+
+  // Banks (per topic)
+  const banks = new Map();      // topic -> array of qObjs
+  const bankKeys = new Map();   // topic -> Set(key)
+  const working = new Map();    // topic -> shuffled deck
+
+  // Steal flow
+  let stealAvailable = false;
+  let stealPlayer = 0; // who can steal (1/2)
+
+  // ------------ CUSTOM QUESTION PACKS ------------
+  // Everything here is "open" style; the API provides MC style.
+  // These packs are designed to feel more accurate for Disney/eras/WW2 than the API alone.
+  const CUSTOM_PACK = {
+    base: [
+      {cat:"Friends", q:"In FRIENDS, what is the name of Joey's bedtime penguin?", a:"Hugsy"},
+      {cat:"Friends", q:"In FRIENDS, what name does Phoebe often use as her alter ego?", a:"Regina Phalange"},
+      {cat:"Friends", q:"In FRIENDS, what is Chandler Bing's middle name?", a:"Muriel"},
+      {cat:"Friends", q:"In FRIENDS, what color is Monica and Rachel’s apartment door?", a:"Purple"},
+      {cat:"HIMYM", q:"In How I Met Your Mother, where does the gang frequently hang out?", a:"MacLaren's Pub"},
+      {cat:"HIMYM", q:"In How I Met Your Mother, what color is the French horn Ted steals for Robin?", a:"Blue"},
+      {cat:"Star Wars", q:"In Star Wars, what is the name of Han Solo’s ship?", a:"The Millennium Falcon"},
+      {cat:"Star Wars", q:"In Star Wars, what species is Admiral Ackbar?", a:"Mon Calamari"},
+      {cat:"90s", q:"In 'Kenan & Kel', who is obsessed with orange soda?", a:"Kel"},
+      {cat:"90s", q:"Which 90s toy was a furry electronic pet that spoke “Furbish”?", a:"Furby"}
+    ],
+    pop: [
+      {cat:"Pop Culture", q:"What is the name of the coffee shop in FRIENDS?", a:"Central Perk"},
+      {cat:"Pop Culture", q:"What do you call the yellow creatures in Despicable Me?", a:"Minions"},
+      {cat:"Pop Culture", q:"In The Office (US), what paper company do they work for?", a:"Dunder Mifflin"},
+      {cat:"Pop Culture", q:"What is the fictional continent where Game of Thrones mainly takes place?", a:"Westeros"},
+      {cat:"Pop Culture", q:"In Marvel, what is Captain America’s shield made of?", a:"Vibranium"},
+      {cat:"Pop Culture", q:"In Lord of the Rings, what is the name of Frodo’s loyal gardener friend?", a:"Samwise Gamgee"},
+      {cat:"Pop Culture", q:"What is the name of the school in Harry Potter?", a:"Hogwarts"},
+      {cat:"Pop Culture", q:"In Stranger Things, what is Eleven’s favorite snack?", a:"Eggo waffles"},
+      {cat:"Pop Culture", q:"What is the name of the city Batman protects?", a:"Gotham City"},
+      {cat:"Pop Culture", q:"In Pokémon, what type is Pikachu?", a:"Electric"}
+    ],
+    disney: [
+      {cat:"Disney", q:"In The Lion King, what is Simba’s father’s name?", a:"Mufasa"},
+      {cat:"Disney", q:"In Aladdin, what is the name of Aladdin’s monkey?", a:"Abu"},
+      {cat:"Disney", q:"In Frozen, what is the name of the snowman?", a:"Olaf"},
+      {cat:"Disney", q:"In Beauty and the Beast, what does Belle love to do most?", a:"Read"},
+      {cat:"Disney", q:"In Moana, what is the name of the demigod she teams up with?", a:"Maui"},
+      {cat:"Disney", q:"In The Little Mermaid, what is Ariel’s best fish friend named?", a:"Flounder"},
+      {cat:"Disney", q:"In Hercules, what is the name of his trainer satyr?", a:"Philoctetes (Phil)"},
+      {cat:"Disney", q:"In Tangled, what is the name of Rapunzel’s chameleon?", a:"Pascal"},
+      {cat:"Disney", q:"In Mulan, what is the name of the small dragon?", a:"Mushu"},
+      {cat:"Disney", q:"In Toy Story, what is the name of the space ranger toy?", a:"Buzz Lightyear"},
+      {cat:"Disney", q:"In Finding Nemo, what kind of fish is Nemo?", a:"Clownfish"},
+      {cat:"Disney", q:"In Monsters, Inc., what do the monsters originally collect for power?", a:"Screams"}
+    ],
+    y80s: [
+      {cat:"1980s", q:"What arcade character eats dots and avoids ghosts?", a:"Pac-Man"},
+      {cat:"1980s", q:"Which sci-fi movie features the DeLorean time machine?", a:"Back to the Future"},
+      {cat:"1980s", q:"What is the name of the ghost-hunting team in the 1984 film?", a:"Ghostbusters"},
+      {cat:"1980s", q:"Which movie features the quote “I feel the need… the need for speed!”?", a:"Top Gun"},
+      {cat:"1980s", q:"What board game is played with little plastic hippos chomping marbles?", a:"Hungry Hungry Hippos"},
+      {cat:"1980s", q:"What is the name of the lovable alien in the 1982 film?", a:"E.T."},
+      {cat:"1980s", q:"Which band sang “Take On Me”?", a:"a-ha"},
+      {cat:"1980s", q:"What toy line features robots that are “More than meets the eye”?", a:"Transformers"},
+      {cat:"1980s", q:"In Star Trek, what is the Federation’s flagship ship called in TNG era?", a:"USS Enterprise"},
+      {cat:"1980s", q:"What is the first name of the famous video game plumber brother?", a:"Mario"}
+    ],
+    y90s: [
+      {cat:"1990s", q:"In The Fresh Prince of Bel-Air, what city does Will move to?", a:"Bel-Air (Los Angeles)"},
+      {cat:"1990s", q:"Which 90s sitcom features the characters Ross, Rachel, Monica, Chandler, Joey, and Phoebe?", a:"Friends"},
+      {cat:"1990s", q:"What animated TV family lives in Springfield?", a:"The Simpsons"},
+      {cat:"1990s", q:"What is the name of the 90s handheld virtual pet?", a:"Tamagotchi"},
+      {cat:"1990s", q:"Which movie features the line “My heart will go on” as its theme song era?", a:"Titanic"},
+      {cat:"1990s", q:"In Jurassic Park, what kind of DNA was used to help clone dinosaurs?", a:"Dinosaur DNA preserved in amber"},
+      {cat:"1990s", q:"What is the name of the toy that you twist into shapes and tie in knots?", a:"Gak (or Silly Putty-style slime)"},
+      {cat:"1990s", q:"Which gaming console introduced Mario 64?", a:"Nintendo 64"},
+      {cat:"1990s", q:"What is the name of the coffee chain in Seattle that got huge in the 90s?", a:"Starbucks"},
+      {cat:"1990s", q:"Which TV show features “The Truth Is Out There” tagline?", a:"The X-Files"}
+    ],
+    y2000s: [
+      {cat:"2000s", q:"What company launched the iPhone in 2007?", a:"Apple"},
+      {cat:"2000s", q:"Which fantasy film series began in 2001 with The Fellowship of the Ring?", a:"The Lord of the Rings"},
+      {cat:"2000s", q:"Which wizarding movie series began in 2001 with Sorcerer’s Stone?", a:"Harry Potter"},
+      {cat:"2000s", q:"What social network launched in 2004 that started at Harvard?", a:"Facebook"},
+      {cat:"2000s", q:"In The Office (US), what is Dwight’s job title?", a:"Assistant to the Regional Manager"},
+      {cat:"2000s", q:"What Pixar movie features a trash-compacting robot in space?", a:"WALL-E"},
+      {cat:"2000s", q:"Which console family includes Xbox 360?", a:"Xbox"},
+      {cat:"2000s", q:"What video platform launched in 2005?", a:"YouTube"},
+      {cat:"2000s", q:"Which TV show features the character Jack Bauer?", a:"24"},
+      {cat:"2000s", q:"What is the name of the coffee shop in Gilmore Girls’ town (often referenced)?", a:"Luke’s Diner"}
+    ],
+    ww2: [
+      {cat:"World War 2", q:"What year did World War II end in Europe?", a:"1945"},
+      {cat:"World War 2", q:"What day is commonly known as the attack on Pearl Harbor?", a:"December 7, 1941"},
+      {cat:"World War 2", q:"What was the code name for the Allied invasion of Normandy?", a:"Operation Overlord"},
+      {cat:"World War 2", q:"What was the name of the beach landings event in Normandy?", a:"D-Day"},
+      {cat:"World War 2", q:"Which country was led by Winston Churchill during most of WWII?", a:"The United Kingdom"},
+      {cat:"World War 2", q:"What was the name of the plane that dropped the first atomic bomb used in war?", a:"Enola Gay"},
+      {cat:"World War 2", q:"Which two cities were atomic bombs dropped on in 1945?", a:"Hiroshima and Nagasaki"},
+      {cat:"World War 2", q:"What was the name of the alliance including Germany, Italy, and Japan?", a:"The Axis Powers"},
+      {cat:"World War 2", q:"What was the alliance including the U.S., U.K., and Soviet Union called?", a:"The Allies"},
+      {cat:"World War 2", q:"What was the massive fortified line built by France before WWII called?", a:"The Maginot Line"}
+    ]
+  };
+
+  // Turn all custom into open questions
+  const ALL_CUSTOM = []
+    .concat(CUSTOM_PACK.base, CUSTOM_PACK.pop, CUSTOM_PACK.disney, CUSTOM_PACK.y80s, CUSTOM_PACK.y90s, CUSTOM_PACK.y2000s, CUSTOM_PACK.ww2)
+    .map(q => ({...q, type:"open"}));
+
+  // ------------ OpenTDB category ids ------------
   const OTD_CATS = {
     gen: 9,
     movies: 11,
@@ -429,217 +656,75 @@
     history: 23
   };
 
-  // --- CUSTOM PACK (rephrased with context) ---
-  const customQuestions = [
-    // FRIENDS
-    {cat:"Friends", q:"In FRIENDS, what is the name of Joey's bedtime penguin?", a:"Hugsy"},
-    {cat:"Friends", q:"In FRIENDS, what name does Phoebe often use as her alter ego?", a:"Regina Phalange"},
-    {cat:"Friends", q:"In FRIENDS, what is Chandler Bing's middle name?", a:"Muriel"},
-    {cat:"Friends", q:"In FRIENDS, which of Joey’s sisters did Chandler kiss before dating Monica?", a:"Mary Angela"},
-    {cat:"Friends", q:"In FRIENDS, what is the famous address Chandler gives for Yemen?", a:"15 Yemen Road, Yemen"},
-    {cat:"Friends", q:"In FRIENDS, what color is Monica and Rachel’s apartment door?", a:"Purple"},
-    // HIMYM
-    {cat:"HIMYM", q:"In How I Met Your Mother, what instrument does Ted steal for Robin?", a:"A blue French horn"},
-    {cat:"HIMYM", q:"In How I Met Your Mother, where does the gang frequently hang out?", a:"MacLaren's Pub"},
-    {cat:"HIMYM", q:"In How I Met Your Mother, what is Barney’s job title acronym?", a:"PLEASE"},
-    // STAR WARS
-    {cat:"Star Wars", q:"In Star Wars (original trilogy), who is the only non-Jedi to use a lightsaber on-screen?", a:"Han Solo"},
-    {cat:"Star Wars", q:"In Star Wars, what species is Admiral Ackbar?", a:"Mon Calamari"},
-    {cat:"Star Wars", q:"In Star Wars, what is the name of Boba Fett’s ship?", a:"Slave I"},
-    // 90s
-    {cat:"90s TV", q:"In 'Kenan & Kel', who is obsessed with orange soda?", a:"Kel"},
-    {cat:"90s Toys", q:"In the 90s, which furry electronic toy spoke 'Furbish'?", a:"Furby"},
-    {cat:"90s Music", q:"In 90s pop, who sang 'Genie in a Bottle'?", a:"Christina Aguilera"}
-  ];
-
-  // --- DOM ---
-  const ui = {
-    q: document.getElementById('question'),
-    a: document.getElementById('answer'),
-    cat: document.getElementById('category'),
-    timer: document.getElementById('timer'),
-    p1Score: document.getElementById('score-p1'),
-    p2Score: document.getElementById('score-p2'),
-    controls: document.getElementById('controls-area'),
-    btnP1: document.getElementById('btn-p1'),
-    btnP2: document.getElementById('btn-p2'),
-    loader: document.getElementById('loader'),
-    modeText: document.getElementById('mode-text'),
-    subText: document.getElementById('sub-text'),
-    toast: document.getElementById('toast'),
-
-    nameP1: document.getElementById('name-p1'),
-    nameP2: document.getElementById('name-p2'),
-
-    options: document.getElementById('options'),
-
-    catSelect: document.getElementById('category-select'),
-    btnRandom: document.getElementById('btn-random'),
-    btnBest10: document.getElementById('btn-best10'),
-    btnNames: document.getElementById('btn-names'),
-
-    btnShow: document.getElementById('btn-show'),
-    btnCorrect: document.getElementById('btn-correct'),
-    btnWrong: document.getElementById('btn-wrong'),
-    btnNext: document.getElementById('btn-next'),
-
-    btnUndo: document.getElementById('btn-undo'),
-    btnPause: document.getElementById('btn-pause'),
-    btnReset: document.getElementById('btn-reset')
-  };
-
-  // --- STATE ---
-  let apiToken = null;
-
-  // banks (each bank has its own unique set)
-  const banks = new Map();     // key -> array of qObj
-  const bankKeys = new Map();  // key -> Set(hash)
-  const working = new Map();   // key -> shuffled copy
-
-  // global no-repeat for played this session
-  const playedKeys = new Set();
-
-  let currentQ = null; // {cat,q,a, options?:[], correctIndex?:number, type:"mc"|"open"}
-  let p1Score = 0;
-  let p2Score = 0;
-
-  let buzzWinner = 0; // 0 none, 1 P1, 2 P2
-  let answerRevealed = false;
-
-  let timerInterval = null;
-  let timeLeft = QUESTION_SECONDS;
-  let paused = false;
-
-  let randomCategory = false;
-
-  let best10Enabled = false;
-  let matchQCount = 0;
-  let matchLocked = false;
-
-  const undoStack = [];
-
-  // Names
-  const NAME_KEY = "trivia_names_v1";
-  let names = { p1: "Pauline", p2: "Jon" };
-
-  // --- UTIL ---
+  // ------------ HELPERS ------------
   function toast(msg){
     ui.toast.textContent = msg;
-    ui.toast.style.display = 'block';
+    ui.toast.style.display = "block";
     clearTimeout(ui.toast._t);
-    ui.toast._t = setTimeout(() => ui.toast.style.display = 'none', 1400);
+    ui.toast._t = setTimeout(()=> ui.toast.style.display="none", 1400);
   }
 
   function shuffle(arr){
-    for (let i = arr.length - 1; i > 0; i--){
-      const j = Math.floor(Math.random() * (i + 1));
+    for (let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
   }
 
   function decodeHtml(str){
-    const txt = document.createElement("textarea");
-    txt.innerHTML = str;
-    return txt.value;
+    const t = document.createElement("textarea");
+    t.innerHTML = str;
+    return t.value;
   }
 
   function makeKey(qObj){
-    const q = (qObj.q || "").trim().toLowerCase();
-    const a = (qObj.a || "").trim().toLowerCase();
-    const c = (qObj.cat || "").trim().toLowerCase();
+    const c=(qObj.cat||"").trim().toLowerCase();
+    const q=(qObj.q||"").trim().toLowerCase();
+    const a=(qObj.a||"").trim().toLowerCase();
     return `${c}||${q}||${a}`;
   }
 
-  function fetchWithTimeout(url, ms){
-    return new Promise((resolve, reject) => {
-      const controller = new AbortController();
-      const t = setTimeout(() => {
-        controller.abort();
-        reject(new Error("timeout"));
-      }, ms);
-
-      fetch(url, { cache: "no-store", signal: controller.signal })
-        .then(r => { clearTimeout(t); resolve(r); })
-        .catch(e => { clearTimeout(t); reject(e); });
-    });
+  function ensureBank(topic){
+    if (!banks.has(topic)) banks.set(topic, []);
+    if (!bankKeys.has(topic)) bankKeys.set(topic, new Set());
   }
 
-  function setLoading(isLoading, top, sub){
-    ui.loader.style.display = isLoading ? 'block' : 'none';
-    if (top) ui.modeText.textContent = top;
-    if (sub) ui.subText.textContent = sub;
-  }
-
-  function setControlsLocked(lockBuzzers){
-    if (lockBuzzers) ui.controls.classList.add('locked');
-    else ui.controls.classList.remove('locked');
-  }
-
-  function setAdminActive(active){
-    if (active) ui.controls.classList.add('active-admin');
-    else ui.controls.classList.remove('active-admin');
-  }
-
-  function setAnswerVisible(visible){
-    answerRevealed = visible;
-    if (visible) ui.a.classList.add('visible');
-    else ui.a.classList.remove('visible');
-  }
-
-  function resetWinnerUI(){
-    buzzWinner = 0;
-    ui.btnP1.classList.remove('winner');
-    ui.btnP2.classList.remove('winner');
-  }
-
-  function updateScores(){
-    ui.p1Score.textContent = String(p1Score);
-    ui.p2Score.textContent = String(p2Score);
-  }
-
-  function best10StatusText(){
-    if (!best10Enabled) return "NORMAL MODE";
-    if (matchLocked) return "BEST OF 10 (FINISHED)";
-    return `BEST OF 10 • Q ${matchQCount}/${BEST10_MAX_Q}`;
-  }
-
-  function currentSelectedCategory(){
-    if (!randomCategory) return ui.catSelect.value;
-    const opts = Array.from(ui.catSelect.options).map(o => o.value);
-    return opts[Math.floor(Math.random() * opts.length)];
-  }
-
-  function ensureBank(key){
-    if (!banks.has(key)) banks.set(key, []);
-    if (!bankKeys.has(key)) bankKeys.set(key, new Set());
-  }
-
-  function addToBank(bankKey, items){
-    ensureBank(bankKey);
-    const arr = banks.get(bankKey);
-    const keys = bankKeys.get(bankKey);
-
-    for (const qObj of items){
-      const k = makeKey(qObj);
+  function addToBank(topic, items){
+    ensureBank(topic);
+    const arr = banks.get(topic);
+    const keys = bankKeys.get(topic);
+    for (const item of items){
+      const k = makeKey(item);
       if (!keys.has(k)){
         keys.add(k);
-        arr.push(qObj);
+        arr.push(item);
       }
     }
   }
 
-  function resetWorkingDeck(key){
-    const src = banks.get(key) || [];
-    working.set(key, shuffle(src.slice()));
+  function resetWorkingDeck(topic){
+    const src = banks.get(topic) || [];
+    working.set(topic, shuffle(src.slice()));
   }
 
-  function pickFromWorkingDeck(key){
-    if (!working.has(key)) resetWorkingDeck(key);
+  function pickFromDeck(topic){
+    if (!working.has(topic)) resetWorkingDeck(topic);
+    const deck = working.get(topic);
 
-    const deck = working.get(key);
     while (deck.length){
       const qObj = deck.shift();
+      const k = makeKey(qObj);
+      if (playedKeys.has(k)) continue;
+      playedKeys.add(k);
+      return qObj;
+    }
+
+    // reshuffle attempt (still no repeats because playedKeys)
+    resetWorkingDeck(topic);
+    const d2 = working.get(topic);
+    while (d2.length){
+      const qObj = d2.shift();
       const k = makeKey(qObj);
       if (playedKeys.has(k)) continue;
       playedKeys.add(k);
@@ -648,306 +733,39 @@
     return null;
   }
 
-  function getNextQuestion(){
-    const sel = currentSelectedCategory();
-
-    let qObj = pickFromWorkingDeck(sel);
-
-    // Fallback to custom (always available) if online bank is empty
-    if (!qObj && sel !== "custom"){
-      toast("Category empty — using Custom");
-      qObj = pickFromWorkingDeck("custom");
-    }
-
-    // Fallback to mixed if custom is also empty
-    if (!qObj && sel !== "mixed"){
-      toast("Fallback — using Mixed");
-      qObj = pickFromWorkingDeck("mixed");
-    }
-
-    return qObj;
-  }
-
-  function resetForNewQuestion(){
-    clearInterval(timerInterval);
-    paused = false;
-    ui.btnPause.textContent = "Pause";
-
-    resetWinnerUI();
-    setControlsLocked(false);
-    setAdminActive(true);
-    setAnswerVisible(false);
-
-    ui.a.style.background = "#27ae60";
-    ui.a.textContent = "ANSWER HIDDEN";
-    ui.timer.style.width = "100%";
-
-    // clear options UI
-    ui.options.innerHTML = "";
-    ui.options.style.display = "none";
-  }
-
-  function renderOptions(qObj){
-    ui.options.innerHTML = "";
-    if (qObj.type !== "mc" || !Array.isArray(qObj.options) || qObj.options.length !== 4){
-      ui.options.style.display = "none";
-      return;
-    }
-
-    ui.options.style.display = "flex";
-
-    const labels = ["A", "B", "C", "D"];
-    qObj.options.forEach((opt, i) => {
-      const btn = document.createElement("button");
-      btn.className = "option-btn";
-      btn.type = "button";
-      btn.dataset.index = String(i);
-      btn.innerHTML = `<span class="option-label">${labels[i]}.</span> ${opt}`;
-      // options are for display only; buzzing decides who answers
-      btn.addEventListener("click", () => {
-        toast("Options are reference only");
-      });
-      ui.options.appendChild(btn);
+  function fetchWithTimeout(url, ms){
+    return new Promise((resolve,reject)=>{
+      const controller = new AbortController();
+      const t=setTimeout(()=>{ controller.abort(); reject(new Error("timeout")); }, ms);
+      fetch(url, {cache:"no-store", signal:controller.signal})
+        .then(r=>{ clearTimeout(t); resolve(r); })
+        .catch(e=>{ clearTimeout(t); reject(e); });
     });
   }
 
-  function highlightCorrectOption(){
-    if (!currentQ || currentQ.type !== "mc") return;
-    const idx = currentQ.correctIndex;
-    const buttons = Array.from(ui.options.querySelectorAll(".option-btn"));
-    if (Number.isInteger(idx) && buttons[idx]) buttons[idx].classList.add("correct");
+  function setLoading(on, top, sub){
+    ui.loader.style.display = on ? "block" : "none";
+    if (top) ui.modeText.textContent = top;
+    if (sub) ui.subText.textContent = sub;
   }
 
-  function renderQuestion(qObj){
-    currentQ = qObj;
-    ui.cat.textContent = qObj.cat || "Trivia";
-    ui.q.textContent = qObj.q || "—";
-    ui.a.textContent = qObj.a || "—";
-    setAnswerVisible(false);
-
-    renderOptions(qObj);
+  function updateScores(){
+    ui.score1.textContent = String(p1Score);
+    ui.score2.textContent = String(p2Score);
   }
 
-  function startTimer(){
-    clearInterval(timerInterval);
-    timeLeft = QUESTION_SECONDS;
-    ui.timer.style.width = "100%";
-
-    timerInterval = setInterval(() => {
-      if (paused) return;
-
-      timeLeft -= (TICK_MS / 1000);
-      const pct = Math.max(0, (timeLeft / QUESTION_SECONDS) * 100);
-      ui.timer.style.width = pct + "%";
-
-      if (timeLeft <= 0){
-        clearInterval(timerInterval);
-        setControlsLocked(true); // time up locks buzzers
-        setAdminActive(true);
-        toast("Time!");
-      }
-    }, TICK_MS);
+  function applyNames(){
+    ui.name1.textContent = names.p1.toUpperCase();
+    ui.name2.textContent = names.p2.toUpperCase();
+    ui.b1.textContent = names.p1.toUpperCase();
+    ui.b2.textContent = names.p2.toUpperCase();
+    ui.overlayP1.textContent = names.p1;
+    ui.overlayP2.textContent = names.p2;
+    document.title = `${names.p1} vs ${names.p2}: Trivia`;
   }
 
-  function endBest10Match(){
-    matchLocked = true;
-    setControlsLocked(true);
-    setAdminActive(true);
-    setAnswerVisible(true);
-
-    ui.cat.textContent = "Match Over";
-
-    let msg = "🤝 Tie game!";
-    if (p1Score > p2Score) msg = `🏆 ${names.p1} wins Best of 10!`;
-    if (p2Score > p1Score) msg = `🏆 ${names.p2} wins Best of 10!`;
-
-    ui.q.textContent = msg;
-    ui.a.textContent = "Tap Reset to play again.";
-    ui.timer.style.width = "0%";
-    toast("Match finished");
-  }
-
-  function nextQuestion(){
-    if (matchLocked){
-      toast("Match finished — Reset");
-      return;
-    }
-
-    if (best10Enabled && matchQCount >= BEST10_MAX_Q){
-      endBest10Match();
-      return;
-    }
-
-    if (best10Enabled) matchQCount++;
-
-    resetForNewQuestion();
-
-    const qObj = getNextQuestion();
-    if (!qObj){
-      ui.cat.textContent = "DONE";
-      ui.q.textContent = "No more unique questions available in this session.";
-      ui.a.textContent = "Refresh to rebuild a new session bank.";
-      setAnswerVisible(true);
-      setControlsLocked(true);
-      setAdminActive(true);
-      clearInterval(timerInterval);
-      return;
-    }
-
-    renderQuestion(qObj);
-    ui.modeText.textContent = best10StatusText();
-    startTimer();
-  }
-
-  function handleBuzz(player){
-    if (paused) return;
-    if (!currentQ) return;
-    if (buzzWinner !== 0) return;
-    if (ui.controls.classList.contains('locked')) return;
-
-    buzzWinner = player;
-    clearInterval(timerInterval);
-
-    setControlsLocked(true);
-    setAdminActive(true);
-
-    if (player === 1) ui.btnP1.classList.add('winner');
-    else ui.btnP2.classList.add('winner');
-
-    toast(player === 1 ? `${names.p1} buzzed!` : `${names.p2} buzzed!`);
-  }
-
-  function showAnswer(){
-    if (!currentQ) return;
-    setAnswerVisible(true);
-    highlightCorrectOption();
-  }
-
-  function pushUndo(){
-    undoStack.push({
-      p1Score, p2Score,
-      matchQCount, matchLocked, best10Enabled,
-      buzzWinner, answerRevealed
-    });
-    if (undoStack.length > 10) undoStack.shift();
-  }
-
-  function judge(correct){
-    if (!currentQ) return;
-    pushUndo();
-
-    if (correct && buzzWinner !== 0){
-      if (buzzWinner === 1) p1Score++;
-      else p2Score++;
-      updateScores();
-      ui.a.style.background = "#2ecc71";
-      toast("Point awarded");
-    } else {
-      ui.a.style.background = "#e74c3c";
-      toast(correct ? "No buzz — no point" : "Marked wrong");
-    }
-
-    setTimeout(() => { ui.a.style.background = "#27ae60"; }, 450);
-    ui.modeText.textContent = best10StatusText();
-  }
-
-  function undo(){
-    const last = undoStack.pop();
-    if (!last){ toast("Nothing to undo"); return; }
-
-    p1Score = last.p1Score;
-    p2Score = last.p2Score;
-    matchQCount = last.matchQCount;
-    matchLocked = last.matchLocked;
-    best10Enabled = last.best10Enabled;
-    buzzWinner = last.buzzWinner;
-
-    updateScores();
-    ui.modeText.textContent = best10StatusText();
-
-    setAnswerVisible(last.answerRevealed);
-    ui.btnP1.classList.toggle('winner', buzzWinner === 1);
-    ui.btnP2.classList.toggle('winner', buzzWinner === 2);
-
-    toast("Undone");
-  }
-
-  function togglePause(){
-    if (!currentQ){ toast("Start a question first"); return; }
-    paused = !paused;
-    ui.btnPause.textContent = paused ? "Resume" : "Pause";
-
-    if (paused){
-      setControlsLocked(true);
-      setAdminActive(true);
-      toast("Paused");
-    } else {
-      if (buzzWinner === 0 && timeLeft > 0){
-        setControlsLocked(false);
-      }
-      toast("Resumed");
-    }
-  }
-
-  function toggleRandom(){
-    randomCategory = !randomCategory;
-    ui.btnRandom.textContent = randomCategory ? "RANDOM: ON" : "RANDOM: OFF";
-    ui.btnRandom.classList.toggle("btn-toggle-on", randomCategory);
-    toast(randomCategory ? "Random category ON" : "Random category OFF");
-  }
-
-  function toggleBest10(){
-    best10Enabled = !best10Enabled;
-    matchQCount = 0;
-    matchLocked = false;
-
-    ui.btnBest10.textContent = best10Enabled ? "BEST10: ON" : "BEST10: OFF";
-    ui.btnBest10.classList.toggle("btn-toggle-on", best10Enabled);
-
-    ui.modeText.textContent = best10StatusText();
-    toast(best10Enabled ? "Best of 10 ON" : "Best of 10 OFF");
-  }
-
-  function resetAll(){
-    clearInterval(timerInterval);
-
-    paused = false;
-    ui.btnPause.textContent = "Pause";
-
-    p1Score = 0; p2Score = 0;
-    updateScores();
-
-    resetWinnerUI();
-    setAnswerVisible(false);
-    undoStack.length = 0;
-
-    best10Enabled = false;
-    matchQCount = 0;
-    matchLocked = false;
-    ui.btnBest10.textContent = "BEST10: OFF";
-    ui.btnBest10.classList.remove("btn-toggle-on");
-
-    ui.controls.classList.remove('locked');
-    ui.controls.classList.add('active-admin');
-
-    ui.timer.style.width = "100%";
-    ui.cat.textContent = "Custom";
-    ui.q.textContent = 'Tap "Next →" to start!';
-    ui.a.textContent = "ANSWER HIDDEN";
-    ui.options.innerHTML = "";
-    ui.options.style.display = "none";
-
-    playedKeys.clear();
-    for (const key of working.keys()) working.delete(key);
-
-    ui.modeText.textContent = "READY";
-    ui.subText.textContent = "Custom questions available now • Online loading…";
-    toast("Reset");
-  }
-
-  // --- NAMES ---
   function loadNames(){
-    try {
+    try{
       const raw = localStorage.getItem(NAME_KEY);
       if (raw){
         const parsed = JSON.parse(raw);
@@ -955,49 +773,108 @@
           names = { p1: parsed.p1 || "Player 1", p2: parsed.p2 || "Player 2" };
         }
       }
-    } catch(e){}
+    }catch(e){}
   }
 
   function saveNames(){
-    try { localStorage.setItem(NAME_KEY, JSON.stringify(names)); } catch(e){}
+    try{ localStorage.setItem(NAME_KEY, JSON.stringify(names)); }catch(e){}
   }
 
-  function applyNamesToUI(){
-    ui.nameP1.textContent = names.p1;
-    ui.nameP2.textContent = names.p2;
-    ui.btnP1.textContent = names.p1.toUpperCase();
-    ui.btnP2.textContent = names.p2.toUpperCase();
-    document.title = `${names.p1} vs ${names.p2}: Trivia Ultimate`;
+  function best10Status(){
+    if (!best10Enabled) return "READY";
+    if (matchLocked) return "BEST OF 10 (FINISHED)";
+    if (suddenDeath) return "SUDDEN DEATH";
+    return `BEST OF 10 • Q ${matchQCount}/${BEST10_MAX_Q}`;
   }
 
-  function editNames(){
-    const p1 = prompt("Player 1 name:", names.p1);
-    if (p1 === null) return;
-    const p2 = prompt("Player 2 name:", names.p2);
-    if (p2 === null) return;
-
-    names.p1 = (p1.trim() || "Player 1");
-    names.p2 = (p2.trim() || "Player 2");
-    saveNames();
-    applyNamesToUI();
-    toast("Names updated");
+  function getSelectedTopic(){
+    if (!randomCategory) return ui.categorySelect.value;
+    const values = Array.from(ui.categorySelect.options).map(o=>o.value);
+    return values[Math.floor(Math.random()*values.length)];
   }
 
-  // --- NETWORK / BANK LOADING ---
+  function resetWinnerState(){
+    buzzWinner = 0;
+    lockedGuessIndex = null;
+    ui.b1.classList.remove("winner");
+    ui.b2.classList.remove("winner");
+    ui.options.querySelectorAll(".option-btn").forEach(b=>b.classList.remove("locked","correct"));
+    stealAvailable = false;
+    stealPlayer = 0;
+  }
+
+  function setAnswerVisible(on){
+    if (on) ui.a.classList.add("visible");
+    else ui.a.classList.remove("visible");
+  }
+
+  function setAdminActive(active){
+    if (active) ui.controls.classList.add("active-admin");
+    else ui.controls.classList.remove("active-admin");
+  }
+
+  function lockBuzzers(lock){
+    if (lock) ui.controls.classList.add("locked");
+    else ui.controls.classList.remove("locked");
+  }
+
+  // ------------ SOUND + HAPTICS ------------
+  function haptic(){
+    try{
+      if (navigator.vibrate) navigator.vibrate(20);
+    }catch(e){}
+  }
+
+  function beep(freq=440, ms=80){
+    try{
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "square";
+      o.frequency.value = freq;
+      g.gain.value = 0.05;
+      o.connect(g); g.connect(ctx.destination);
+      o.start();
+      setTimeout(()=>{
+        o.stop();
+        ctx.close();
+      }, ms);
+    }catch(e){}
+  }
+
+  function sfxBuzz(){
+    if (!sfxOn) return;
+    haptic();
+    beep(520, 90);
+  }
+  function sfxCorrect(){
+    if (!sfxOn) return;
+    haptic();
+    beep(780, 70);
+    setTimeout(()=>beep(980, 70), 90);
+  }
+  function sfxWrong(){
+    if (!sfxOn) return;
+    haptic();
+    beep(220, 120);
+  }
+
+  // ------------ API TOKEN ------------
   async function getToken(){
-    try {
-      const r = await fetchWithTimeout('https://opentdb.com/api_token.php?command=request', API_TIMEOUT_MS);
+    try{
+      const r = await fetchWithTimeout("https://opentdb.com/api_token.php?command=request", API_TIMEOUT_MS);
       const d = await r.json();
       if (d.response_code === 0) return d.token;
-    } catch(e){}
+    }catch(e){}
     return null;
   }
 
-  function buildApiQuestion(item){
+  function buildApiMC(item){
     const q = decodeHtml(item.question);
     const correct = decodeHtml(item.correct_answer);
     const incorrect = (item.incorrect_answers || []).map(decodeHtml);
-
     const all = shuffle([correct, ...incorrect]);
     const correctIndex = all.indexOf(correct);
 
@@ -1011,169 +888,795 @@
     };
   }
 
-  async function fetchBatch(categoryId){
+  async function fetchBatch(categoryId, difficulty){
     let url = `https://opentdb.com/api.php?amount=${API_BATCH_SIZE}&type=multiple`;
     if (categoryId) url += `&category=${categoryId}`;
+    if (difficulty) url += `&difficulty=${difficulty}`;
     if (apiToken) url += `&token=${apiToken}`;
 
     const res = await fetchWithTimeout(url, API_TIMEOUT_MS);
     const data = await res.json();
 
     if (data.response_code === 4 && apiToken){
-      try {
+      try{
         const rr = await fetchWithTimeout(`https://opentdb.com/api_token.php?command=reset&token=${apiToken}`, API_TIMEOUT_MS);
         await rr.json();
-      } catch(e){}
+      }catch(e){}
       return [];
     }
 
     if (!data.results || !data.results.length) return [];
-    return data.results.map(buildApiQuestion);
+    return data.results.map(buildApiMC);
   }
 
-  async function fastLoadOnline(){
+  // ------------ TOPIC FILL STRATEGY ------------
+  function topicToFetchPlan(topic){
+    switch(topic){
+      case "tv": return [{catId: OTD_CATS.tv, w: 1}];
+      case "movies": return [{catId: OTD_CATS.movies, w: 1}];
+      case "music": return [{catId: OTD_CATS.music, w: 1}];
+      case "science": return [{catId: OTD_CATS.science, w: 1}];
+      case "history": return [{catId: OTD_CATS.history, w: 1}];
+      case "computers": return [{catId: OTD_CATS.computers, w: 1}];
+      case "ww2": return [{catId: OTD_CATS.history, w: 1}];
+
+      case "disney":
+        return [{catId: OTD_CATS.movies, w: 2},{catId: OTD_CATS.gen, w:1}];
+
+      case "80s":
+      case "90s":
+      case "2000s":
+        return [{catId: OTD_CATS.music, w:2},{catId: OTD_CATS.tv, w:1},{catId: OTD_CATS.movies, w:1},{catId: OTD_CATS.gen, w:1}];
+
+      case "pop":
+        return [{catId: OTD_CATS.tv, w:2},{catId: OTD_CATS.movies, w:2},{catId: OTD_CATS.music, w:1},{catId: OTD_CATS.gen, w:1}];
+
+      case "mixed":
+      default:
+        return [
+          {catId: OTD_CATS.gen, w:1},
+          {catId: OTD_CATS.tv, w:1},
+          {catId: OTD_CATS.movies, w:1},
+          {catId: OTD_CATS.music, w:1},
+          {catId: OTD_CATS.science, w:1},
+          {catId: OTD_CATS.history, w:1},
+          {catId: OTD_CATS.computers, w:1},
+        ];
+    }
+  }
+
+  function pickWeighted(plan){
+    const total = plan.reduce((s,x)=>s+x.w,0);
+    let r = Math.random() * total;
+    for (const item of plan){
+      r -= item.w;
+      if (r <= 0) return item.catId;
+    }
+    return plan[0].catId;
+  }
+
+  async function warmupOnlineBanks(){
     if (!apiToken) return;
 
-    // Ensure banks exist
-    const keys = ["mixed","custom","gen","tv","movies","music","science","history","computers"];
-    keys.forEach(ensureBank);
+    const topics = ["mixed","tv","movies","music","science","history","computers","pop","80s","90s","2000s","disney","ww2"];
+    topics.forEach(ensureBank);
 
-    // Custom always available instantly
-    addToBank("custom", customQuestions.map(q => ({...q, type:"open"})));
-    addToBank("mixed", customQuestions.map(q => ({...q, type:"open"})));
+    for (let i=0; i<FAST_WARMUP_BATCHES; i++){
+      const diff = ui.difficultySelect.value; // always current
+      for (const topic of topics){
+        const plan = topicToFetchPlan(topic);
+        const catId = pickWeighted(plan);
 
-    // Quick mixed fill
-    const mixedIds = Object.values(OTD_CATS);
-    while ((banks.get("mixed").length || 0) < FAST_MIXED_TARGET){
-      setLoading(true, "READY", `Loading online… Mixed ${(banks.get("mixed").length || 0)}/${FAST_MIXED_TARGET}`);
-      const rnd = mixedIds[Math.floor(Math.random() * mixedIds.length)];
-      try { addToBank("mixed", await fetchBatch(rnd)); }
-      catch(e){ break; }
-    }
-
-    // Quick category fill
-    const catList = [
-      ["gen", OTD_CATS.gen],
-      ["tv", OTD_CATS.tv],
-      ["movies", OTD_CATS.movies],
-      ["music", OTD_CATS.music],
-      ["science", OTD_CATS.science],
-      ["history", OTD_CATS.history],
-      ["computers", OTD_CATS.computers]
-    ];
-
-    for (const [key, id] of catList){
-      while ((banks.get(key).length || 0) < FAST_CAT_TARGET){
-        setLoading(true, "READY", `Loading online… ${key.toUpperCase()} ${(banks.get(key).length || 0)}/${FAST_CAT_TARGET}`);
-        try { addToBank(key, await fetchBatch(id)); }
-        catch(e){ break; }
+        setLoading(true, "READY", `Loading… ${topic.toUpperCase()} batch ${i+1}/${FAST_WARMUP_BATCHES}`);
+        try{
+          const items = await fetchBatch(catId, diff);
+          addToBank(topic, items);
+          if (topic !== "mixed") addToBank("mixed", items);
+        }catch(e){}
       }
     }
 
-    // Decks ready
-    setLoading(false, "READY", `Online ready • Mixed ${banks.get("mixed").length} loaded`);
-    resetWorkingDeck("custom");
-    resetWorkingDeck("mixed");
-    resetWorkingDeck("gen"); resetWorkingDeck("tv"); resetWorkingDeck("movies"); resetWorkingDeck("music");
-    resetWorkingDeck("science"); resetWorkingDeck("history"); resetWorkingDeck("computers");
+    setLoading(false, best10Status(), "Online ready • More loading in background…");
+    topics.forEach(resetWorkingDeck);
   }
 
-  async function backgroundFill(){
+  async function backgroundFillLoop(){
     if (!apiToken) return;
 
-    const mixedIds = Object.values(OTD_CATS);
-    const catList = [
-      ["gen", OTD_CATS.gen],
-      ["tv", OTD_CATS.tv],
-      ["movies", OTD_CATS.movies],
-      ["music", OTD_CATS.music],
-      ["science", OTD_CATS.science],
-      ["history", OTD_CATS.history],
-      ["computers", OTD_CATS.computers]
-    ];
+    const topics = ["mixed","tv","movies","music","science","history","computers","pop","80s","90s","2000s","disney","ww2"];
 
-    while (true){
-      // Fill mixed to 1000
-      if ((banks.get("mixed").length || 0) < BACKGROUND_MIXED_TARGET){
-        ui.subText.textContent = `Fetching more… Mixed ${(banks.get("mixed").length || 0)}/${BACKGROUND_MIXED_TARGET}`;
-        const rnd = mixedIds[Math.floor(Math.random() * mixedIds.length)];
-        try { addToBank("mixed", await fetchBatch(rnd)); }
-        catch(e){}
-      }
+    while(true){
+      const diff = ui.difficultySelect.value; // always current
+      for (const topic of topics){
+        ensureBank(topic);
+        const size = (banks.get(topic) || []).length;
 
-      // Fill category decks
-      for (const [key, id] of catList){
-        if ((banks.get(key).length || 0) < BACKGROUND_CAT_TARGET){
-          ui.subText.textContent = `Fetching more… ${key.toUpperCase()} ${(banks.get(key).length || 0)}/${BACKGROUND_CAT_TARGET}`;
-          try { addToBank(key, await fetchBatch(id)); }
-          catch(e){}
+        if (size < 220){
+          const plan = topicToFetchPlan(topic);
+          const catId = pickWeighted(plan);
+          ui.subText.textContent = `Fetching more… ${topic.toUpperCase()} ${size}/220`;
+          try{
+            const items = await fetchBatch(catId, diff);
+            addToBank(topic, items);
+            if (topic !== "mixed") addToBank("mixed", items);
+          }catch(e){}
         }
       }
-
-      const mixedDone = (banks.get("mixed").length || 0) >= BACKGROUND_MIXED_TARGET;
-      const catsDone = catList.every(([k]) => (banks.get(k).length || 0) >= BACKGROUND_CAT_TARGET);
-
-      if (mixedDone && catsDone){
-        ui.subText.textContent = `Fully loaded • Mixed ${banks.get("mixed").length} • Categories ready`;
-        break;
-      }
-
-      await new Promise(r => setTimeout(r, 900));
+      await new Promise(r=>setTimeout(r, 900));
     }
   }
 
-  // --- INIT ---
+  // ------------ OPTIONS UI (tappable lock-in) ------------
+  function clearOptions(){
+    ui.options.innerHTML = "";
+    ui.options.style.display = "none";
+  }
+
+  function renderOptions(qObj){
+    clearOptions();
+    if (!qObj || qObj.type !== "mc" || !Array.isArray(qObj.options) || qObj.options.length !== 4) return;
+
+    ui.options.style.display = "flex";
+    const labels = ["A","B","C","D"];
+
+    qObj.options.forEach((txt, i)=>{
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "option-btn";
+      btn.innerHTML = `<span class="opt-label">${labels[i]}.</span> ${txt}`;
+
+      btn.addEventListener("click", ()=>{
+        // Normal mode: must buzz first
+        if (!lightningEnabled && buzzWinner === 0){
+          toast("Buzz first to lock an answer");
+          return;
+        }
+
+        lockedGuessIndex = i;
+        ui.options.querySelectorAll(".option-btn").forEach(b=>b.classList.remove("locked"));
+        btn.classList.add("locked");
+
+        if (lightningEnabled){
+          // In lightning, option tap triggers overlay
+          const correct = (currentQ.type === "mc" && i === currentQ.correctIndex);
+          lightningPendingCorrect = correct;
+          showLightningOverlay();
+        } else {
+          toast("Answer locked");
+          if (sfxOn) beep(660, 60);
+          haptic();
+        }
+      });
+
+      ui.options.appendChild(btn);
+    });
+  }
+
+  function revealCorrectOption(){
+    if (!currentQ || currentQ.type !== "mc") return;
+    const idx = currentQ.correctIndex;
+    const buttons = Array.from(ui.options.querySelectorAll(".option-btn"));
+    if (Number.isInteger(idx) && buttons[idx]) buttons[idx].classList.add("correct");
+  }
+
+  // ------------ LIGHTNING OVERLAY ------------
+  function showLightningOverlay(){
+    ui.overlayTitle.textContent = lightningPendingCorrect ? "Correct! Who answered?" : "Wrong! Who answered?";
+    ui.overlaySub.textContent = "Tap the winner (or No Score)";
+    ui.overlay.style.display = "flex";
+  }
+  function hideLightningOverlay(){
+    ui.overlay.style.display = "none";
+  }
+
+  function awardLightning(who){
+    // who: 1,2,0(no score)
+    if (who === 0){
+      toast("No score");
+      return;
+    }
+    if (lightningPendingCorrect){
+      if (who === 1) p1Score++; else p2Score++;
+      updateScores();
+      sfxCorrect();
+      toast("Correct +1");
+    } else {
+      sfxWrong();
+      toast("Wrong");
+    }
+  }
+
+  // ------------ GAME FLOW ------------
+  function renderQuestion(qObj){
+    currentQ = qObj;
+    ui.cat.textContent = (qObj.cat || "Trivia").toUpperCase();
+    ui.q.textContent = qObj.q || "—";
+    ui.a.textContent = qObj.a || "—";
+    setAnswerVisible(false);
+    renderOptions(qObj);
+  }
+
+  function resetForNext(){
+    clearInterval(timerInterval);
+    paused = false;
+    ui.pauseBtn.textContent = "Pause";
+    timeLeft = QUESTION_SECONDS;
+    ui.timer.style.width = "100%";
+    ui.a.style.background = "#27ae60";
+    ui.a.textContent = "ANSWER HIDDEN";
+    setAnswerVisible(false);
+
+    resetWinnerState();
+    lockBuzzers(false);
+    setAdminActive(true);
+
+    clearOptions();
+  }
+
+  function startTimer(){
+    clearInterval(timerInterval);
+    timeLeft = QUESTION_SECONDS;
+    ui.timer.style.width = "100%";
+
+    timerInterval = setInterval(()=>{
+      if (paused || lightningEnabled) return;
+
+      timeLeft -= (TICK_MS/1000);
+      const pct = Math.max(0, (timeLeft/QUESTION_SECONDS)*100);
+      ui.timer.style.width = pct + "%";
+
+      if (timeLeft <= 0){
+        clearInterval(timerInterval);
+        lockBuzzers(true);
+        setAdminActive(true);
+        toast("Time!");
+      }
+    }, TICK_MS);
+  }
+
+  function pushUndo(){
+    undoStack.push({
+      p1Score, p2Score,
+      best10Enabled, matchQCount, matchLocked, suddenDeath,
+      lightningEnabled, lightningTimeLeft,
+      buzzWinner, lockedGuessIndex, stealAvailable, stealPlayer
+    });
+    if (undoStack.length > 15) undoStack.shift();
+  }
+
+  function undo(){
+    const last = undoStack.pop();
+    if (!last){ toast("Nothing to undo"); return; }
+
+    p1Score = last.p1Score;
+    p2Score = last.p2Score;
+    best10Enabled = last.best10Enabled;
+    matchQCount = last.matchQCount;
+    matchLocked = last.matchLocked;
+    suddenDeath = last.suddenDeath;
+
+    lightningEnabled = last.lightningEnabled;
+    lightningTimeLeft = last.lightningTimeLeft;
+
+    buzzWinner = last.buzzWinner;
+    lockedGuessIndex = last.lockedGuessIndex;
+    stealAvailable = last.stealAvailable;
+    stealPlayer = last.stealPlayer;
+
+    updateScores();
+    ui.modeText.textContent = best10Status();
+    toast("Undone");
+  }
+
+  function handleBuzz(player){
+    if (paused || lightningEnabled) return;
+    if (!currentQ) return;
+    if (buzzWinner !== 0) return;
+    if (ui.controls.classList.contains("locked")) return;
+
+    buzzWinner = player;
+    sfxBuzz();
+
+    clearInterval(timerInterval);
+    lockBuzzers(true);
+    setAdminActive(true);
+
+    if (player === 1) ui.b1.classList.add("winner");
+    else ui.b2.classList.add("winner");
+
+    toast(`${player === 1 ? names.p1 : names.p2} buzzed!`);
+  }
+
+  function showAnswer(){
+    if (!currentQ) return;
+    setAnswerVisible(true);
+    revealCorrectOption();
+  }
+
+  function markCorrect(){
+    if (!currentQ) return;
+    pushUndo();
+
+    if (buzzWinner === 0 && !lightningEnabled){
+      toast("No buzz — no point");
+      sfxWrong();
+      return;
+    }
+
+    if (!lightningEnabled){
+      if (buzzWinner === 1) p1Score++;
+      else p2Score++;
+    }
+
+    updateScores();
+    ui.a.style.background = "#2ecc71";
+    sfxCorrect();
+    toast("Point +1");
+    setTimeout(()=> ui.a.style.background="#27ae60", 450);
+  }
+
+  function markWrong(){
+    if (!currentQ) return;
+    pushUndo();
+
+    ui.a.style.background = "#e74c3c";
+    sfxWrong();
+    toast("Wrong");
+
+    if (stealMode && !lightningEnabled && buzzWinner !== 0){
+      stealAvailable = true;
+      stealPlayer = (buzzWinner === 1) ? 2 : 1;
+      lockBuzzers(false);
+      toast(`Steal available: ${stealPlayer === 1 ? names.p1 : names.p2}`);
+    }
+
+    setTimeout(()=> ui.a.style.background="#27ae60", 450);
+  }
+
+  function nextQuestion(){
+    if (matchLocked){
+      toast("Match finished — Reset");
+      return;
+    }
+
+    if (best10Enabled && !suddenDeath){
+      if (matchQCount >= BEST10_MAX_Q){
+        if (p1Score === p2Score){
+          suddenDeath = true;
+          toast("Sudden death!");
+        } else {
+          endBest10();
+          return;
+        }
+      }
+    }
+
+    if (best10Enabled && !suddenDeath){
+      matchQCount++;
+    }
+
+    resetForNext();
+
+    const qObj = getNextQuestionObj();
+    if (!qObj){
+      ui.cat.textContent = "DONE";
+      ui.q.textContent = "No more unique questions available this session.";
+      ui.a.textContent = "Refresh to reset question pool.";
+      setAnswerVisible(true);
+      lockBuzzers(true);
+      setAdminActive(true);
+      return;
+    }
+
+    renderQuestion(qObj);
+    ui.modeText.textContent = best10Status();
+    startTimer();
+  }
+
+  function endBest10(){
+    matchLocked = true;
+    lockBuzzers(true);
+    setAdminActive(true);
+    setAnswerVisible(true);
+    clearInterval(timerInterval);
+
+    let msg = "🤝 Tie game!";
+    if (p1Score > p2Score) msg = `🏆 ${names.p1} wins!`;
+    if (p2Score > p1Score) msg = `🏆 ${names.p2} wins!`;
+
+    ui.cat.textContent = "MATCH OVER";
+    ui.q.textContent = msg;
+    ui.a.textContent = "Tap Reset to play again.";
+    ui.timer.style.width = "0%";
+    toast("Match finished");
+  }
+
+  function checkSuddenDeathAfterScore(){
+    if (!best10Enabled || !suddenDeath) return;
+    if (p1Score !== p2Score){
+      endBest10();
+    } else {
+      toast("Still tied — next sudden-death question");
+    }
+  }
+
+  function togglePause(){
+    if (!currentQ && !lightningEnabled){
+      toast("Start a question first");
+      return;
+    }
+    paused = !paused;
+    ui.pauseBtn.textContent = paused ? "Resume" : "Pause";
+
+    if (paused){
+      lockBuzzers(true);
+      setAdminActive(true);
+      toast("Paused");
+    } else {
+      if (!lightningEnabled){
+        if (buzzWinner === 0 && timeLeft > 0){
+          lockBuzzers(false);
+        }
+      }
+      toast("Resumed");
+    }
+  }
+
+  function toggleRandom(){
+    randomCategory = !randomCategory;
+    ui.randomBtn.classList.toggle("on", randomCategory);
+    ui.randomBtn.textContent = randomCategory ? "RANDOM: ON" : "RANDOM: OFF";
+    toast(randomCategory ? "Random categories ON" : "Random categories OFF");
+  }
+
+  function toggleBest10(){
+    best10Enabled = !best10Enabled;
+    suddenDeath = false;
+    matchLocked = false;
+    matchQCount = 0;
+
+    ui.best10Btn.classList.toggle("on", best10Enabled);
+    ui.best10Btn.textContent = best10Enabled ? "BEST10: ON" : "BEST10";
+    ui.modeText.textContent = best10Status();
+    toast(best10Enabled ? "Best of 10 ON" : "Best of 10 OFF");
+  }
+
+  function toggleSteal(){
+    stealMode = !stealMode;
+    ui.stealBtn.classList.toggle("on", stealMode);
+    ui.stealBtn.textContent = stealMode ? "STEAL: ON" : "STEAL: OFF";
+    toast(stealMode ? "Steal mode ON" : "Steal mode OFF");
+  }
+
+  function toggleSfx(){
+    sfxOn = !sfxOn;
+    ui.sfxBtn.classList.toggle("on", sfxOn);
+    ui.sfxBtn.textContent = sfxOn ? "SFX: ON" : "SFX: OFF";
+    toast(sfxOn ? "Sound ON" : "Sound OFF");
+  }
+
+  function editNames(){
+    const p1 = prompt("Player 1 name:", names.p1);
+    if (p1 === null) return;
+    const p2 = prompt("Player 2 name:", names.p2);
+    if (p2 === null) return;
+    names.p1 = (p1.trim() || "Player 1");
+    names.p2 = (p2.trim() || "Player 2");
+    saveNames();
+    applyNames();
+    toast("Names updated");
+  }
+
+  function resetAll(){
+    clearInterval(timerInterval);
+    clearInterval(lightningInterval);
+
+    lightningEnabled = false;
+    lightningTimeLeft = LIGHTNING_SECONDS;
+    lightningPendingCorrect = null;
+    hideLightningOverlay();
+
+    ui.adminRow.style.display = "";
+    setAdminActive(true);
+
+    paused = false;
+    ui.pauseBtn.textContent = "Pause";
+
+    p1Score = 0; p2Score = 0;
+    updateScores();
+
+    best10Enabled = false;
+    suddenDeath = false;
+    matchLocked = false;
+    matchQCount = 0;
+
+    stealAvailable = false;
+    stealPlayer = 0;
+    lockedGuessIndex = null;
+
+    undoStack.length = 0;
+    playedKeys.clear();
+    working.clear();
+
+    ui.best10Btn.classList.remove("on");
+    ui.best10Btn.textContent = "BEST10";
+    ui.lightningBtn.classList.remove("on");
+    ui.lightningBtn.textContent = "LIGHTNING";
+
+    ui.modeText.textContent = "READY";
+    ui.subText.textContent = apiToken ? "Online ready • Loading more in background…" : "Offline mode (custom only)";
+
+    ui.cat.textContent = "CUSTOM";
+    ui.q.textContent = 'Tap “Next →” to start!';
+    ui.a.textContent = "ANSWER HIDDEN";
+    setAnswerVisible(false);
+    ui.timer.style.width = "100%";
+
+    resetWinnerState();
+    clearOptions();
+    lockBuzzers(false);
+
+    for (const topic of banks.keys()) resetWorkingDeck(topic);
+
+    toast("Reset");
+  }
+
+  // ------------ LIGHTNING MODE (60s) ------------
+  function toggleLightning(){
+    lightningEnabled = !lightningEnabled;
+    ui.lightningBtn.classList.toggle("on", lightningEnabled);
+    ui.lightningBtn.textContent = lightningEnabled ? "LIGHTNING: ON" : "LIGHTNING";
+
+    if (lightningEnabled){
+      startLightning();
+    } else {
+      stopLightning(false);
+    }
+  }
+
+  function startLightning(){
+    clearInterval(timerInterval);
+    paused = false;
+    ui.pauseBtn.textContent = "Pause";
+
+    lightningTimeLeft = LIGHTNING_SECONDS;
+    ui.modeText.textContent = "LIGHTNING ROUND";
+    ui.subText.textContent = "60 seconds • Tap an option → choose who answered";
+    ui.timer.style.width = "100%";
+
+    buzzWinner = 0;
+    lockedGuessIndex = null;
+    lockBuzzers(true);
+    setAdminActive(false);
+    ui.adminRow.style.display = "none";
+
+    serveLightningQuestion();
+
+    lightningInterval = setInterval(()=>{
+      if (paused) return;
+      lightningTimeLeft -= 0.1;
+      const pct = Math.max(0, (lightningTimeLeft / LIGHTNING_SECONDS) * 100);
+      ui.timer.style.width = pct + "%";
+
+      if (lightningTimeLeft <= 0){
+        stopLightning(true);
+      }
+    }, 100);
+  }
+
+  function stopLightning(finished){
+    clearInterval(lightningInterval);
+    lightningInterval = null;
+
+    hideLightningOverlay();
+    lightningPendingCorrect = null;
+
+    ui.adminRow.style.display = "";
+    setAdminActive(true);
+    lockBuzzers(false);
+
+    if (finished){
+      ui.modeText.textContent = "LIGHTNING OVER";
+      ui.subText.textContent = "Tap Next to continue normal play";
+      toast("Lightning finished");
+    } else {
+      ui.modeText.textContent = best10Status();
+      ui.subText.textContent = apiToken ? "Online ready • Loading more in background…" : "Offline mode (custom only)";
+      toast("Lightning off");
+    }
+  }
+
+  function serveLightningQuestion(){
+    resetWinnerState();
+    setAnswerVisible(false);
+    ui.a.textContent = "ANSWER HIDDEN";
+    ui.a.style.background = "#27ae60";
+
+    const qObj = getNextQuestionObj(true);
+    if (!qObj){
+      ui.cat.textContent = "DONE";
+      ui.q.textContent = "No more questions available.";
+      ui.a.textContent = "Refresh to reset.";
+      setAnswerVisible(true);
+      return;
+    }
+    renderQuestion(qObj);
+
+    // If open-ended in lightning, show answer tap to advance
+    if (qObj.type === "open"){
+      clearOptions();
+      ui.a.textContent = "Tap here to reveal answer";
+      ui.a.classList.add("visible");
+      ui.a.style.background = "#f39c12";
+      ui.a.onclick = () => {
+        ui.a.onclick = null;
+        ui.a.style.background = "#27ae60";
+        ui.a.textContent = qObj.a;
+        setTimeout(()=>serveLightningQuestion(), 850);
+      };
+    } else {
+      // MC: tapping option triggers overlay (handled in renderOptions)
+    }
+  }
+
+  // Overlay button handlers
+  ui.overlayP1.addEventListener("click", ()=>{
+    hideLightningOverlay();
+    awardLightning(1);
+    setTimeout(()=>serveLightningQuestion(), 250);
+  });
+  ui.overlayP2.addEventListener("click", ()=>{
+    hideLightningOverlay();
+    awardLightning(2);
+    setTimeout(()=>serveLightningQuestion(), 250);
+  });
+  ui.overlayNone.addEventListener("click", ()=>{
+    hideLightningOverlay();
+    toast("No score");
+    setTimeout(()=>serveLightningQuestion(), 250);
+  });
+
+  // ------------ QUESTION PICKING ------------
+  function getNextQuestionObj(forLightning=false){
+    const topic = getSelectedTopic();
+    let qObj = pickFromDeck(topic);
+
+    // If the chosen topic is empty, fall back to topic-specific custom packs before general custom:
+    if (!qObj){
+      if (topic === "disney") qObj = pickFromDeck("disney");
+      if (!qObj && topic === "80s") qObj = pickFromDeck("80s");
+      if (!qObj && topic === "90s") qObj = pickFromDeck("90s");
+      if (!qObj && topic === "2000s") qObj = pickFromDeck("2000s");
+      if (!qObj && topic === "pop") qObj = pickFromDeck("pop");
+      if (!qObj && topic === "ww2") qObj = pickFromDeck("ww2");
+    }
+
+    if (!qObj && topic !== "custom"){
+      qObj = pickFromDeck("custom");
+    }
+    if (!qObj && topic !== "mixed"){
+      qObj = pickFromDeck("mixed");
+    }
+
+    // Lightning prefers MC if possible
+    if (forLightning && qObj && qObj.type === "open"){
+      for (let i=0;i<6;i++){
+        const alt = pickFromDeck(topic === "custom" ? "mixed" : topic);
+        if (alt && alt.type === "mc"){ qObj = alt; break; }
+      }
+    }
+    return qObj;
+  }
+
+  // ------------ CATEGORY CHANGE FIX ------------
+  ui.categorySelect.addEventListener("change", ()=>{
+    randomCategory = false;
+    ui.randomBtn.classList.remove("on");
+    ui.randomBtn.textContent = "RANDOM: OFF";
+    toast("Category set");
+  });
+
+  // ------------ STEAL MODE ENFORCEMENT ------------
+  function handleStealBuzz(player){
+    if (!stealAvailable) return false;
+    if (player !== stealPlayer){
+      toast("Not your steal!");
+      return true;
+    }
+    stealAvailable = false;
+    stealPlayer = 0;
+    return false;
+  }
+
+  function buzz(player){
+    if (handleStealBuzz(player)) return;
+    handleBuzz(player);
+  }
+
+  // ------------ BUTTONS ------------
+  ui.b1.addEventListener("click", ()=> buzz(1));
+  ui.b2.addEventListener("click", ()=> buzz(2));
+
+  ui.showBtn.addEventListener("click", showAnswer);
+
+  ui.correctBtn.addEventListener("click", ()=>{
+    const before1 = p1Score, before2 = p2Score;
+    markCorrect();
+    if (best10Enabled && suddenDeath && (p1Score !== before1 || p2Score !== before2)){
+      checkSuddenDeathAfterScore();
+    }
+  });
+
+  ui.wrongBtn.addEventListener("click", markWrong);
+  ui.nextBtn.addEventListener("click", nextQuestion);
+
+  ui.undoBtn.addEventListener("click", undo);
+  ui.pauseBtn.addEventListener("click", togglePause);
+  ui.resetBtn.addEventListener("click", resetAll);
+
+  ui.randomBtn.addEventListener("click", toggleRandom);
+  ui.best10Btn.addEventListener("click", toggleBest10);
+  ui.lightningBtn.addEventListener("click", toggleLightning);
+  ui.namesBtn.addEventListener("click", editNames);
+  ui.stealBtn.addEventListener("click", toggleSteal);
+  ui.sfxBtn.addEventListener("click", toggleSfx);
+
+  // ------------ INIT BANKS ------------
+  function initBanks(){
+    const topics = ["mixed","custom","tv","movies","music","science","history","computers","pop","80s","90s","2000s","disney","ww2"];
+    topics.forEach(ensureBank);
+
+    // Add all custom into general buckets
+    addToBank("custom", ALL_CUSTOM);
+    addToBank("mixed", ALL_CUSTOM);
+
+    // Route into specific topic banks by their category label
+    ALL_CUSTOM.forEach(q=>{
+      const c = (q.cat||"").toLowerCase();
+      if (c.includes("disney")) addToBank("disney", [q]);
+      if (c.includes("1980")) addToBank("80s", [q]);
+      if (c.includes("1990") || c.includes("90s")) addToBank("90s", [q]);
+      if (c.includes("2000")) addToBank("2000s", [q]);
+      if (c.includes("pop")) addToBank("pop", [q]);
+      if (c.includes("world war 2") || c.includes("ww2")) addToBank("ww2", [q]);
+
+      // Keep pop/mixed feeling nerdy/competitive
+      if (c.includes("star wars") || c.includes("himym") || c.includes("friends")) addToBank("pop", [q]);
+    });
+
+    topics.forEach(resetWorkingDeck);
+  }
+
+  // ------------ INIT ------------
   async function init(){
-    loadNames();
-    applyNamesToUI();
+    loadNames(); applyNames();
+    initBanks();
 
-    // Always build custom instantly so you can start immediately
-    ensureBank("custom");
-    ensureBank("mixed");
-    addToBank("custom", customQuestions.map(q => ({...q, type:"open"})));
-    addToBank("mixed", customQuestions.map(q => ({...q, type:"open"})));
-    resetWorkingDeck("custom");
-    resetWorkingDeck("mixed");
+    setAdminActive(true);
+    lockBuzzers(false);
+    setAnswerVisible(false);
+    ui.a.textContent = "ANSWER HIDDEN";
+    ui.q.textContent = 'Tap “Next →” to start!';
+    ui.cat.textContent = "CUSTOM";
+    ui.modeText.textContent = "READY";
 
-    ui.controls.classList.add('active-admin');
-    ui.controls.classList.remove('locked');
-
-    setLoading(false, "READY", "Custom questions available now • Online loading…");
-
-    // Get token + load online in background (no blocking start)
     setLoading(true, "READY", "Connecting to OpenTDB…");
     apiToken = await getToken();
-    setLoading(false, "READY", apiToken ? "Online loading…" : "Offline mode (custom only)");
-
-    if (apiToken){
-      // Fast online load, then background fill
-      await fastLoadOnline();
-      setTimeout(() => { backgroundFill(); }, 450);
+    if (!apiToken){
+      setLoading(false, "READY", "Offline mode (custom only)");
+      return;
     }
+
+    setLoading(true, "READY", "Warming up categories…");
+    await warmupOnlineBanks();
+    setLoading(false, "READY", "Online ready • Loading more in background…");
+
+    setTimeout(()=> backgroundFillLoop(), 600);
   }
 
-  // --- EVENTS ---
-  ui.btnP1.addEventListener("click", () => handleBuzz(1));
-  ui.btnP2.addEventListener("click", () => handleBuzz(2));
-
-  ui.btnShow.addEventListener("click", showAnswer);
-  ui.btnCorrect.addEventListener("click", () => judge(true));
-  ui.btnWrong.addEventListener("click", () => judge(false));
-  ui.btnNext.addEventListener("click", nextQuestion);
-
-  ui.btnUndo.addEventListener("click", undo);
-  ui.btnPause.addEventListener("click", togglePause);
-  ui.btnReset.addEventListener("click", resetAll);
-
-  ui.btnRandom.addEventListener("click", toggleRandom);
-  ui.btnBest10.addEventListener("click", toggleBest10);
-  ui.btnNames.addEventListener("click", editNames);
-
-  ui.catSelect.addEventListener("change", () => toast("Category set"));
-
   init();
+
 })();
 </script>
-
 </body>
 </html>
