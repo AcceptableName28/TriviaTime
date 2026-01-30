@@ -2,32 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Trivia Ultimate</title>
 
   <style>
     :root{
-      --p1-color:#8e44ad;
-      --p2-color:#2980b9;
+      --p1:#8e44ad;
+      --p2:#2980b9;
       --bg:#2c3e50;
       --card:#ecf0f1;
-      --accent:#f1c40f;
       --text:#14212c;
+      --accent:#f1c40f;
       --muted: rgba(255,255,255,0.14);
+      --muted2: rgba(0,0,0,0.12);
+      --good:#27ae60;
+      --bad:#c0392b;
     }
 
-    *{box-sizing:border-box; touch-action: manipulation;}
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
-    /* iPhone safe areas + true on-screen fit */
     body{
       margin:0;
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
       background:var(--bg);
       color:var(--text);
 
-      /* Fit within Safari UI + notch/home bar */
-      height: 100svh;
-      height: 100dvh;
+      /* Fit modern mobile UI chrome (Safari/Chrome dynamic bars) */
+      height:100svh;
+      height:100dvh;
       overflow:hidden;
 
       padding-top: env(safe-area-inset-top);
@@ -39,22 +41,20 @@
       justify-content:center;
     }
 
-    .game-container{
+    .app{
       width:100%;
-      max-width:600px;
-
-      /* use the remaining padded area */
+      max-width:720px;
       height:100%;
       min-height:0;
 
-      display:grid;
-
-      /* SHORTER header + SHORTER controls so everything fits */
-      grid-template-rows: 46px 1fr 206px;
+      display:flex;
+      flex-direction:column;
     }
 
-    /* HEADER (smaller) */
+    /* ---------- HEADER ---------- */
     .header{
+      flex:0 0 auto;
+      height:46px;
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -62,42 +62,22 @@
       background: rgba(0,0,0,0.22);
       color:#fff;
     }
-
     .score-box{
       min-width:64px;
       text-align:center;
       line-height:1;
     }
-
-    .score-val{
-      font-size:1.35rem;
-      font-weight:950;
-      line-height:1;
-    }
-
-    .score-name{
-      margin-top:2px;
-      font-size:0.62rem;
-      font-weight:900;
-      letter-spacing:0.8px;
-      opacity:0.9;
-      text-transform:uppercase;
-    }
-
+    .score-val{ font-size:1.35rem; font-weight:950; line-height:1; }
+    .score-name{ margin-top:2px; font-size:0.62rem; font-weight:950; letter-spacing:0.8px; text-transform:uppercase; opacity:0.9; }
     .center-info{
+      width:60%;
+      max-width:360px;
       text-align:center;
       line-height:1.05;
-      width:56%;
-      max-width:310px;
       padding:0 6px;
     }
-
-    #mode-text{
-      font-size:0.74rem;
-      font-weight:950;
-    }
-
-    #sub-text{
+    #modeText{ font-size:0.74rem; font-weight:950; }
+    #subText{
       font-size:0.62rem;
       opacity:0.75;
       margin-top:2px;
@@ -105,42 +85,40 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
-
     .loader{
-      border: 3px solid rgba(255,255,255,0.2);
-      border-top: 3px solid var(--accent);
-      border-radius:50%;
       width:14px; height:14px;
+      border:3px solid rgba(255,255,255,0.2);
+      border-top:3px solid var(--accent);
+      border-radius:50%;
       animation:spin 1s linear infinite;
       display:none;
       margin:4px auto 0;
     }
-    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes spin { to { transform:rotate(360deg); } }
 
-    /* CARD AREA (more outer padding so it looks centered + not edge-to-edge) */
-    .card-area{
-      padding:10px 12px 8px;
+    /* ---------- MAIN ---------- */
+    .main{
+      flex:1 1 auto;
       min-height:0;
-      display:flex;
-      align-items:stretch;
-    }
-
-    .card{
-      width:100%;
-      background:var(--card);
-      border-radius:16px;
-      box-shadow:0 10px 22px rgba(0,0,0,0.28);
-
-      /* smaller padding = smaller board */
-      padding:10px 10px 10px;
-
       display:flex;
       flex-direction:column;
       gap:8px;
+      padding:10px 12px 8px;
+    }
 
+    .card{
+      flex:1 1 auto;
       min-height:0;
-      overflow:hidden; /* keep the page from scrolling */
+      background:var(--card);
+      border-radius:16px;
+      box-shadow:0 10px 22px rgba(0,0,0,0.28);
+      overflow:hidden;
       position:relative;
+
+      display:flex;
+      flex-direction:column;
+      padding:10px;
+      gap:8px;
     }
 
     .timer-track{
@@ -157,7 +135,7 @@
       transition:width 0.1s linear;
     }
 
-    .category-tag{
+    .tag{
       align-self:center;
       margin-top:8px;
       background:#95a5a6;
@@ -169,193 +147,182 @@
       text-transform:uppercase;
     }
 
-    /* Smaller question font */
-    .question-text{
-      font-size:1.02rem;
-      font-weight:950;
-      line-height:1.18;
+    /* Board should be only as tall as needed, but still handle long text internally */
+    .question{
       margin:0;
       padding:0 4px;
       text-align:center;
+      font-weight:950;
+      font-size:1.02rem;
+      line-height:1.18;
 
-      /* prevent big vertical growth */
-      max-height: 5.2em; /* ~4-5 lines */
+      /* keep board compact; scroll inside if question is long */
+      max-height: 4.6em;
       overflow:auto;
       -webkit-overflow-scrolling: touch;
     }
 
-    /* Multiple choice area: scroll INSIDE the card only */
-    .options-wrap{
+    /* Options always visible (D1): reserve space for 4 lines */
+    .options{
       display:none;
-      width:100%;
+      flex:0 0 auto;
       gap:7px;
       flex-direction:column;
-
-      max-height: 170px;
-      overflow:auto;
-      -webkit-overflow-scrolling: touch;
-      padding-right:2px;
     }
-
     .option-btn{
       border:none;
       border-radius:12px;
-      padding:9px 10px;
       background: rgba(44,62,80,0.10);
-      color:#14212c;
-      font-weight:900;
+      color:var(--text);
+      font-weight:950;
       font-size:0.86rem;
       text-align:left;
+      padding:9px 10px;
       box-shadow:0 2px 0 rgba(0,0,0,0.08);
     }
-    .option-btn:active{transform: translateY(2px);}
+    .option-btn:active{ transform: translateY(2px); }
+    .opt-label{ display:inline-block; min-width:24px; opacity:0.85; font-weight:950; }
+    .option-btn.locked{ background: rgba(241,196,15,0.24); box-shadow:0 0 0 2px rgba(241,196,15,0.52) inset; }
+    .option-btn.correct{ background: rgba(46,204,113,0.24); box-shadow:0 0 0 2px rgba(46,204,113,0.52) inset; }
 
-    .opt-label{
-      display:inline-block;
-      min-width:24px;
-      font-weight:950;
-      opacity:0.85;
-    }
-
-    .option-btn.locked{
-      background: rgba(241,196,15,0.24);
-      box-shadow: 0 0 0 2px rgba(241,196,15,0.52) inset;
-    }
-    .option-btn.correct{
-      background: rgba(46,204,113,0.24);
-      box-shadow: 0 0 0 2px rgba(46,204,113,0.52) inset;
-    }
-
-    /* Answer box: compact */
-    .answer-box{
-      background:#27ae60;
+    .answer{
+      flex:0 0 auto;
+      background: var(--good);
       color:#fff;
-      padding:9px 10px;
       border-radius:12px;
-      width:100%;
-      font-size:0.92rem;
-      font-weight:950;
-
-      opacity:0;
-      transition:opacity 0.25s;
-
+      padding:9px 10px;
       min-height:38px;
+
       display:flex;
       align-items:center;
       justify-content:center;
       text-align:center;
 
-      /* if long answer, scroll inside */
+      font-weight:950;
+      font-size:0.92rem;
+
+      opacity:0;
+      transition:opacity 0.25s;
+
       max-height: 3.8em;
       overflow:auto;
       -webkit-overflow-scrolling: touch;
     }
-    .answer-box.visible{opacity:1;}
+    .answer.visible{ opacity:1; }
 
-    /* CONTROLS (compact so entire UI fits) */
-    .controls-area{
+    /* ---------- CONTROLS ---------- */
+    .controls{
+      flex:0 0 auto;
       background: rgba(0,0,0,0.30);
-      padding:8px 10px 10px;
+      border-radius:14px;
+      padding:8px;
       display:flex;
       flex-direction:column;
-      gap:7px;
-      min-height:0;
+      gap:8px;
     }
 
+    /* Tight-to-text buttons */
     .row{
       display:flex;
       gap:8px;
-      width:100%;
       flex-wrap:wrap;
+      align-items:center;
+      justify-content:center;
     }
 
-    select, button{
-      border:none;
-      border-radius:10px;
-      font-weight:950;
-      -webkit-tap-highlight-color: transparent;
-    }
+    select, button{ border:none; border-radius:10px; font-weight:950; }
 
-    .select{
+    .catSelect{
       height:34px;
-      background:var(--muted);
-      color:#fff;
-      padding:0 10px;
-      flex: 1 1 160px;
-      appearance:none;
-      -webkit-appearance:none;
       font-size:0.74rem;
+      color:#fff;
+      background: var(--muted);
+      padding:0 10px;
+
+      /* shrink near content but allow growth for selected label */
+      width: max-content;
+      max-width: 100%;
     }
 
     .btn{
       height:34px;
-      background:var(--muted);
-      color:#fff;
-      padding:0 10px;
       font-size:0.74rem;
-      flex: 1 1 110px;
+      color:#fff;
+      background: var(--muted);
+      padding:0 10px;
+      width:max-content;
+      min-width: max-content;
+      cursor:pointer;
     }
+    .btn.on{ background: rgba(241,196,15,0.70); color:#14212c; }
+    .btn:active{ transform: translateY(2px); }
 
-    .btn.on{background: rgba(241,196,15,0.70); color:#14212c;}
-    .btn.small{flex: 1 1 96px;}
-    .btn.tiny{flex: 1 1 88px;}
-
-    /* Buzzers smaller */
-    .buzzer-row{display:flex; gap:10px;}
+    .buzzer-row{ display:flex; gap:10px; justify-content:center; }
     .buzzer{
-      flex:1;
       height:44px;
+      border-radius:12px;
       color:#fff;
       font-size:1.00rem;
       font-weight:1000;
       text-transform:uppercase;
-      border-radius:12px;
+      padding:0 14px;
       box-shadow:0 3px 0 rgba(0,0,0,0.22);
+      width: min(48%, 320px);
     }
-    .buzzer:active{transform: translateY(3px); box-shadow:none;}
-    .b1{background:var(--p1-color);}
-    .b2{background:var(--p2-color);}
+    .buzzer:active{ transform: translateY(3px); box-shadow:none; }
+    .p1{ background: var(--p1); }
+    .p2{ background: var(--p2); }
 
-    .controls-area.locked .buzzer{opacity:0.35; pointer-events:none;}
-    .controls-area.locked .buzzer.winner{opacity:1; box-shadow:0 0 12px rgba(255,255,255,0.7);}
+    .locked .buzzer{ opacity:0.35; pointer-events:none; }
+    .buzzer.winner{ opacity:1 !important; box-shadow:0 0 12px rgba(255,255,255,0.7); }
 
-    /* Admin buttons smaller */
     .admin-row{
       display:flex;
       gap:8px;
-      opacity:0.3;
+      flex-wrap:wrap;
+      justify-content:center;
+      opacity:0.30;
       pointer-events:none;
     }
-    .controls-area.active-admin .admin-row{opacity:1; pointer-events:all;}
+    .activeAdmin .admin-row{ opacity:1; pointer-events:auto; }
 
     .admin{
-      flex:1;
       height:36px;
       font-size:0.78rem;
       font-weight:1000;
       border-radius:10px;
       color:#fff;
+      padding:0 12px;
+      width:max-content;
+      min-width:max-content;
     }
-    .show{background:#f39c12; color:#14212c;}
-    .correct{background:#27ae60;}
-    .wrong{background:#c0392b;}
-    .next{background:#7f8c8d;}
+    .showBtn{ background:#f39c12; color:#14212c; }
+    .correctBtn{ background: var(--good); }
+    .wrongBtn{ background: var(--bad); }
+    .nextBtn{ background:#7f8c8d; }
 
-    /* Meta row smaller */
-    .meta-row{display:flex; gap:8px;}
+    .meta-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
     .meta{
-      flex:1;
       height:34px;
       font-size:0.74rem;
       font-weight:1000;
       border-radius:10px;
       color:#fff;
       background: rgba(255,255,255,0.14);
+      padding:0 12px;
+      width:max-content;
+      min-width:max-content;
     }
-    .danger{background: rgba(231,76,60,0.65);}
-    .pause{background: rgba(52,152,219,0.55); color:#122231;}
-    .good{background: rgba(46,204,113,0.55); color:#122231;}
+    .danger{ background: rgba(231,76,60,0.65); }
+    .pause{ background: rgba(52,152,219,0.55); color:#122231; }
+    .good{ background: rgba(46,204,113,0.55); color:#122231; }
 
+    /* ---------- TOAST ---------- */
     .toast{
       position:fixed;
       left:50%;
@@ -373,303 +340,443 @@
       z-index:9999;
     }
 
-    /* Lightning overlay */
+    /* ---------- SETTINGS SHEET ---------- */
     .overlay{
       position:fixed;
       inset:0;
       background:rgba(0,0,0,0.55);
       display:none;
-      align-items:center;
+      align-items:flex-end;
       justify-content:center;
       z-index:10000;
-      padding:18px;
+      padding: 12px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
     }
-    .overlay-card{
-      width:min(520px, 94vw);
+    .sheet{
+      width:min(640px, 96vw);
       background:#fff;
       border-radius:16px;
-      padding:14px;
       box-shadow:0 18px 45px rgba(0,0,0,0.35);
-      text-align:center;
+      overflow:hidden;
+    }
+    .sheetHead{
+      padding:12px 14px;
+      background: rgba(20,33,44,0.06);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .sheetTitle{ font-weight:1000; font-size:0.98rem; }
+    .sheetClose{
+      background: rgba(0,0,0,0.12);
+      color:#14212c;
+      padding:8px 10px;
+      border-radius:12px;
+      font-weight:1000;
+      font-size:0.84rem;
+    }
+    .sheetBody{
+      padding:12px 14px;
       display:flex;
       flex-direction:column;
       gap:10px;
     }
-    .overlay-title{font-weight:1000; font-size:0.98rem; color:#14212c;}
-    .overlay-sub{font-weight:900; font-size:0.82rem; opacity:0.75;}
-    .overlay-row{display:flex; gap:10px;}
-    .overlay-btn{
-      flex:1;
-      border:none;
+    .setRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 10px;
       border-radius:12px;
-      padding:12px 10px;
-      font-weight:1000;
-      font-size:0.92rem;
-      color:#fff;
-      box-shadow:0 4px 0 rgba(0,0,0,0.18);
+      background: rgba(44,62,80,0.06);
     }
-    .overlay-btn:active{transform: translateY(3px); box-shadow:none;}
-    .overlay-p1{background:var(--p1-color);}
-    .overlay-p2{background:var(--p2-color);}
-    .overlay-none{background:#7f8c8d;}
+    .setLabel{
+      font-weight:1000;
+      font-size:0.88rem;
+      color:#14212c;
+    }
+    .setHint{
+      font-size:0.74rem;
+      opacity:0.7;
+      margin-top:2px;
+      font-weight:900;
+    }
+    .setControl{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .chip{
+      height:34px;
+      padding:0 12px;
+      border-radius:999px;
+      background: rgba(20,33,44,0.10);
+      color:#14212c;
+      font-weight:1000;
+      font-size:0.78rem;
+      width:max-content;
+      min-width:max-content;
+    }
+    .chip.on{ background: rgba(241,196,15,0.65); }
+    .sheetSelect{
+      height:34px;
+      padding:0 10px;
+      border-radius:12px;
+      background: rgba(20,33,44,0.10);
+      color:#14212c;
+      font-weight:1000;
+      font-size:0.78rem;
+      border:none;
+    }
+
+    /* Small screens: tighten further */
+    @media (max-height: 740px){
+      .header{ height:44px; }
+      .main{ padding:8px 10px 6px; gap:7px; }
+      .card{ padding:9px; }
+      .buzzer{ height:42px; font-size:0.96rem; }
+      .admin{ height:34px; }
+      .btn,.meta,.catSelect{ height:33px; }
+      .question{ font-size:0.98rem; }
+      .option-btn{ font-size:0.84rem; padding:8px 10px; }
+    }
   </style>
 </head>
 
 <body>
-  <div class="game-container">
+  <div class="app" id="app">
     <div class="header">
       <div class="score-box">
-        <div class="score-val" id="score-p1">0</div>
-        <div class="score-name" id="name-p1" style="color:#d2b4de">PAULINE</div>
+        <div class="score-val" id="s1">0</div>
+        <div class="score-name" id="n1" style="color:#d2b4de">PAULINE</div>
       </div>
 
       <div class="center-info">
-        <div id="mode-text">READY</div>
-        <div id="sub-text">Loading…</div>
+        <div id="modeText">READY</div>
+        <div id="subText">Loading…</div>
         <div class="loader" id="loader"></div>
       </div>
 
       <div class="score-box">
-        <div class="score-val" id="score-p2">0</div>
-        <div class="score-name" id="name-p2" style="color:#a9cce3">JON</div>
+        <div class="score-val" id="s2">0</div>
+        <div class="score-name" id="n2" style="color:#a9cce3">JON</div>
       </div>
     </div>
 
-    <div class="card-area">
+    <div class="main">
       <div class="card" id="card">
         <div class="timer-track"><div class="timer-fill" id="timer"></div></div>
-        <div class="category-tag" id="category">CUSTOM</div>
-        <p class="question-text" id="question">Tap “Next →” to start!</p>
-        <div class="options-wrap" id="options"></div>
-        <div class="answer-box" id="answer">ANSWER HIDDEN</div>
-      </div>
-    </div>
-
-    <div class="controls-area" id="controls">
-      <div class="row">
-        <select class="select" id="categorySelect" aria-label="Category">
-          <option value="mixed" selected>MIXED</option>
-          <option value="custom">CUSTOM (Friends/HIMYM/Star Wars/90s)</option>
-          <option value="pop">POP CULTURE</option>
-          <option value="80s">1980s</option>
-          <option value="90s">1990s</option>
-          <option value="2000s">2000s</option>
-          <option value="disney">DISNEY</option>
-          <option value="ww2">WORLD WAR 2</option>
-          <option value="tv">TV</option>
-          <option value="movies">MOVIES</option>
-          <option value="music">MUSIC</option>
-          <option value="science">SCIENCE</option>
-          <option value="history">HISTORY</option>
-          <option value="computers">COMPUTERS</option>
-        </select>
-
-        <button class="btn small" id="randomBtn">RANDOM: OFF</button>
-        <button class="btn tiny" id="best10Btn">BEST10</button>
-        <button class="btn tiny" id="lightningBtn">LIGHTNING</button>
-        <button class="btn tiny" id="namesBtn">NAMES</button>
+        <div class="tag" id="tag">CUSTOM</div>
+        <p class="question" id="q">Tap “Next →” to start!</p>
+        <div class="options" id="opts"></div>
+        <div class="answer" id="ans">ANSWER HIDDEN</div>
       </div>
 
-      <div class="row">
-        <button class="btn" id="stealBtn">STEAL: OFF</button>
+      <div class="controls" id="controls">
+        <div class="row">
+          <select class="catSelect" id="cat">
+            <option value="mixed" selected>MIXED</option>
+            <option value="custom">CUSTOM (Friends/HIMYM/Star Wars/90s)</option>
+            <option value="pop">POP CULTURE</option>
+            <option value="80s">1980s</option>
+            <option value="90s">1990s</option>
+            <option value="2000s">2000s</option>
+            <option value="disney">DISNEY</option>
+            <option value="ww2">WORLD WAR 2</option>
+            <option value="tv">TV</option>
+            <option value="movies">MOVIES</option>
+            <option value="music">MUSIC</option>
+            <option value="science">SCIENCE</option>
+            <option value="history">HISTORY</option>
+            <option value="computers">COMPUTERS</option>
+          </select>
 
-        <select class="select" id="difficultySelect" aria-label="Difficulty">
-          <option value="easy">DIFFICULTY: EASY</option>
-          <option value="medium" selected>DIFFICULTY: MEDIUM</option>
-          <option value="hard">DIFFICULTY: HARD</option>
-        </select>
+          <button class="btn" id="settingsBtn">SETTINGS</button>
+        </div>
 
-        <button class="btn" id="sfxBtn">SFX: ON</button>
-      </div>
+        <div class="buzzer-row">
+          <button class="buzzer p1" id="b1">PAULINE</button>
+          <button class="buzzer p2" id="b2">JON</button>
+        </div>
 
-      <div class="buzzer-row">
-        <button class="buzzer b1" id="b1">PAULINE</button>
-        <button class="buzzer b2" id="b2">JON</button>
-      </div>
+        <div class="admin-row" id="adminRow">
+          <button class="admin showBtn" id="show">Show Answer</button>
+          <button class="admin correctBtn" id="correct">Correct (+1)</button>
+          <button class="admin wrongBtn" id="wrong">Wrong (0)</button>
+          <button class="admin nextBtn" id="next">Next →</button>
+        </div>
 
-      <div class="admin-row" id="adminRow">
-        <button class="admin show" id="showBtn">Show Answer</button>
-        <button class="admin correct" id="correctBtn">Correct (+1)</button>
-        <button class="admin wrong" id="wrongBtn">Wrong (0)</button>
-        <button class="admin next" id="nextBtn">Next →</button>
-      </div>
-
-      <div class="meta-row">
-        <button class="meta danger" id="undoBtn">Undo</button>
-        <button class="meta pause" id="pauseBtn">Pause</button>
-        <button class="meta good" id="resetBtn">Reset</button>
+        <div class="meta-row">
+          <button class="meta danger" id="undo">Undo</button>
+          <button class="meta pause" id="pause">Pause</button>
+          <button class="meta good" id="reset">Reset</button>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
-  <div class="overlay" id="overlay">
-    <div class="overlay-card">
-      <div class="overlay-title" id="overlayTitle">Who answered?</div>
-      <div class="overlay-sub" id="overlaySub">Tap the winner (or No Score)</div>
-      <div class="overlay-row">
-        <button class="overlay-btn overlay-p1" id="overlayP1">Player 1</button>
-        <button class="overlay-btn overlay-p2" id="overlayP2">Player 2</button>
+  <!-- SETTINGS SHEET -->
+  <div class="overlay" id="sheetOverlay" aria-hidden="true">
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="Settings">
+      <div class="sheetHead">
+        <div class="sheetTitle">Settings</div>
+        <button class="sheetClose" id="sheetClose">Close</button>
       </div>
-      <div class="overlay-row">
-        <button class="overlay-btn overlay-none" id="overlayNone">No Score</button>
+
+      <div class="sheetBody">
+        <div class="setRow">
+          <div>
+            <div class="setLabel">SFX</div>
+            <div class="setHint">Buzzer sound + haptics</div>
+          </div>
+          <div class="setControl">
+            <button class="chip" id="sfxChip">ON</button>
+          </div>
+        </div>
+
+        <div class="setRow">
+          <div>
+            <div class="setLabel">Difficulty</div>
+            <div class="setHint">Default Medium (recommended)</div>
+          </div>
+          <div class="setControl">
+            <select class="sheetSelect" id="diffSel">
+              <option value="easy">Easy</option>
+              <option value="medium" selected>Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setRow">
+          <div>
+            <div class="setLabel">Random Category</div>
+            <div class="setHint">Randomizes category each question</div>
+          </div>
+          <div class="setControl">
+            <button class="chip" id="randomChip">OFF</button>
+          </div>
+        </div>
+
+        <div class="setRow">
+          <div>
+            <div class="setLabel">Best of 10</div>
+            <div class="setHint">Always 10, sudden-death tiebreak</div>
+          </div>
+          <div class="setControl">
+            <button class="chip" id="best10Chip">OFF</button>
+          </div>
+        </div>
+
+        <div class="setRow">
+          <div>
+            <div class="setLabel">Steal Mode</div>
+            <div class="setHint">If wrong, other player can steal +1</div>
+          </div>
+          <div class="setControl">
+            <button class="chip" id="stealChip">OFF</button>
+          </div>
+        </div>
+
+        <div class="setRow">
+          <div>
+            <div class="setLabel">Lightning Round</div>
+            <div class="setHint">60s rapid questions (MC only)</div>
+          </div>
+          <div class="setControl">
+            <button class="chip" id="lightChip">OFF</button>
+          </div>
+        </div>
+
+        <div class="setRow">
+          <div>
+            <div class="setLabel">Nerd Mode</div>
+            <div class="setHint">More sci-fi/computers/Star vibes in Mixed</div>
+          </div>
+          <div class="setControl">
+            <button class="chip" id="nerdChip">OFF</button>
+          </div>
+        </div>
+
+        <div class="setRow">
+          <div>
+            <div class="setLabel">Names</div>
+            <div class="setHint">Edit player names</div>
+          </div>
+          <div class="setControl">
+            <button class="chip" id="namesChip">Edit</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
 <script>
 (() => {
+  /* -------------------- CONFIG -------------------- */
   const QUESTION_SECONDS = 30;
   const TICK_MS = 100;
-  const BEST10_MAX_Q = 10;
 
   const LIGHTNING_SECONDS = 60;
 
   const API_TIMEOUT_MS = 7000;
   const API_BATCH_SIZE = 30;
-  const FAST_WARMUP_BATCHES = 2;
+  const WARMUP_BATCHES = 2;
 
-  const NAME_KEY = "trivia_names_v3";
+  /* Strict no-repeat across sessions */
+  const LS_SEEN = "trivia_seen_strict_v1";
+  const LS_NAMES = "trivia_names_v4";
+  const LS_SETTINGS = "trivia_settings_v4";
 
+  /* Filter out annoying question styles */
+  const BAD_PATTERNS = [
+    "all of the above",
+    "none of the above"
+  ];
+
+  /* -------------------- UI -------------------- */
   const ui = {
-    score1: document.getElementById("score-p1"),
-    score2: document.getElementById("score-p2"),
-    name1: document.getElementById("name-p1"),
-    name2: document.getElementById("name-p2"),
-    modeText: document.getElementById("mode-text"),
-    subText: document.getElementById("sub-text"),
+    s1: document.getElementById("s1"),
+    s2: document.getElementById("s2"),
+    n1: document.getElementById("n1"),
+    n2: document.getElementById("n2"),
+    modeText: document.getElementById("modeText"),
+    subText: document.getElementById("subText"),
     loader: document.getElementById("loader"),
 
-    cat: document.getElementById("category"),
-    q: document.getElementById("question"),
-    options: document.getElementById("options"),
-    a: document.getElementById("answer"),
+    tag: document.getElementById("tag"),
+    q: document.getElementById("q"),
+    opts: document.getElementById("opts"),
+    ans: document.getElementById("ans"),
     timer: document.getElementById("timer"),
 
+    cat: document.getElementById("cat"),
     controls: document.getElementById("controls"),
-    adminRow: document.getElementById("adminRow"),
-
-    categorySelect: document.getElementById("categorySelect"),
-    randomBtn: document.getElementById("randomBtn"),
-    best10Btn: document.getElementById("best10Btn"),
-    lightningBtn: document.getElementById("lightningBtn"),
-    namesBtn: document.getElementById("namesBtn"),
-    stealBtn: document.getElementById("stealBtn"),
-    difficultySelect: document.getElementById("difficultySelect"),
-    sfxBtn: document.getElementById("sfxBtn"),
-
+    adminRowWrap: document.getElementById("adminRow"),
     b1: document.getElementById("b1"),
     b2: document.getElementById("b2"),
-
-    showBtn: document.getElementById("showBtn"),
-    correctBtn: document.getElementById("correctBtn"),
-    wrongBtn: document.getElementById("wrongBtn"),
-    nextBtn: document.getElementById("nextBtn"),
-
-    undoBtn: document.getElementById("undoBtn"),
-    pauseBtn: document.getElementById("pauseBtn"),
-    resetBtn: document.getElementById("resetBtn"),
-
+    show: document.getElementById("show"),
+    correct: document.getElementById("correct"),
+    wrong: document.getElementById("wrong"),
+    next: document.getElementById("next"),
+    undo: document.getElementById("undo"),
+    pause: document.getElementById("pause"),
+    reset: document.getElementById("reset"),
     toast: document.getElementById("toast"),
 
-    overlay: document.getElementById("overlay"),
-    overlayTitle: document.getElementById("overlayTitle"),
-    overlaySub: document.getElementById("overlaySub"),
-    overlayP1: document.getElementById("overlayP1"),
-    overlayP2: document.getElementById("overlayP2"),
-    overlayNone: document.getElementById("overlayNone")
+    settingsBtn: document.getElementById("settingsBtn"),
+    sheetOverlay: document.getElementById("sheetOverlay"),
+    sheetClose: document.getElementById("sheetClose"),
+
+    sfxChip: document.getElementById("sfxChip"),
+    diffSel: document.getElementById("diffSel"),
+    randomChip: document.getElementById("randomChip"),
+    best10Chip: document.getElementById("best10Chip"),
+    stealChip: document.getElementById("stealChip"),
+    lightChip: document.getElementById("lightChip"),
+    nerdChip: document.getElementById("nerdChip"),
+    namesChip: document.getElementById("namesChip"),
   };
 
-  let names = { p1:"Pauline", p2:"Jon" };
+  /* -------------------- STATE -------------------- */
   let apiToken = null;
 
-  let p1Score = 0;
-  let p2Score = 0;
+  let names = { p1: "Pauline", p2: "Jon" };
+  let scores = { p1: 0, p2: 0 };
 
-  let currentQ = null;
-  let buzzWinner = 0;
-  let lockedGuessIndex = null;
+  let settings = {
+    sfx: true,
+    difficulty: "medium",
+    randomCategory: false,
+    best10: false,
+    steal: false,
+    lightning: false,
+    nerd: false
+  };
+
+  let currentQ = null;            // { cat, q, a, type:'mc'|'open', options?, correctIndex? }
+  let buzzWinner = 0;             // 0 none, 1 p1, 2 p2
+  let lockedGuessIndex = null;    // MC selection
+  let paused = false;
 
   let timerInterval = null;
   let timeLeft = QUESTION_SECONDS;
-  let paused = false;
 
-  let randomCategory = false;
-  let stealMode = false;
-  let sfxOn = true;
-
-  let best10Enabled = false;
-  let matchQCount = 0;
-  let matchLocked = false;
+  /* best-of-10 */
+  let matchQCount = 0;            // Q number in match
   let suddenDeath = false;
+  let matchLocked = false;
 
-  let lightningEnabled = false;
+  /* lightning */
   let lightningTimeLeft = LIGHTNING_SECONDS;
   let lightningInterval = null;
 
-  let lightningPendingCorrect = null;
+  /* strict no-repeat set */
+  let seen = new Set();
+
+  /* per-category banks */
+  const banks = new Map();        // topic -> array of question objects
+  const bankKeys = new Map();     // topic -> set of keys in bank
+  const workingDeck = new Map();  // topic -> shuffled array
+  const fetching = new Set();     // topic being fetched to avoid spam
 
   const undoStack = [];
-  const playedKeys = new Set();
 
-  const banks = new Map();
-  const bankKeys = new Map();
-  const working = new Map();
+  /* -------------------- DATA -------------------- */
+  const CUSTOM = [
+    // Friends
+    {cat:"Friends", q:"In FRIENDS, what is the name of Joey's bedtime penguin?", a:"Hugsy", type:"open"},
+    {cat:"Friends", q:"In FRIENDS, what name does Phoebe use as her alter ego?", a:"Regina Phalange", type:"open"},
+    {cat:"Friends", q:"In FRIENDS, what is Chandler Bing's middle name?", a:"Muriel", type:"open"},
+    {cat:"Friends", q:"In FRIENDS, what color is Monica and Rachel’s apartment door?", a:"Purple", type:"open"},
+    {cat:"Friends", q:"In FRIENDS, what is the name of the coffee shop the group hangs out at?", a:"Central Perk", type:"open"},
 
-  let stealAvailable = false;
-  let stealPlayer = 0;
+    // HIMYM
+    {cat:"HIMYM", q:"In How I Met Your Mother, where does the gang frequently hang out?", a:"MacLaren's Pub", type:"open"},
+    {cat:"HIMYM", q:"In How I Met Your Mother, what item does Ted steal for Robin?", a:"A blue French horn", type:"open"},
+    {cat:"HIMYM", q:"In How I Met Your Mother, what is Barney’s catchphrase?", a:"Legendary", type:"open"},
 
-  const CUSTOM_PACK = {
-    base: [
-      {cat:"Friends", q:"In FRIENDS, what is the name of Joey's bedtime penguin?", a:"Hugsy"},
-      {cat:"Friends", q:"In FRIENDS, what name does Phoebe often use as her alter ego?", a:"Regina Phalange"},
-      {cat:"Friends", q:"In FRIENDS, what is Chandler Bing's middle name?", a:"Muriel"},
-      {cat:"Friends", q:"In FRIENDS, what color is Monica and Rachel’s apartment door?", a:"Purple"},
-      {cat:"HIMYM", q:"In How I Met Your Mother, where does the gang frequently hang out?", a:"MacLaren's Pub"},
-      {cat:"HIMYM", q:"In How I Met Your Mother, what color is the French horn Ted steals for Robin?", a:"Blue"},
-      {cat:"Star Wars", q:"In Star Wars, what species is Admiral Ackbar?", a:"Mon Calamari"},
-      {cat:"Star Wars", q:"In Star Wars, what is the name of Han Solo’s ship?", a:"The Millennium Falcon"},
-      {cat:"90s", q:"In 'Kenan & Kel', who is obsessed with orange soda?", a:"Kel"},
-      {cat:"90s", q:"Which 90s toy was a furry electronic pet that spoke “Furbish”?", a:"Furby"}
-    ],
-    pop: [
-      {cat:"Pop Culture", q:"What is the name of the coffee shop in FRIENDS?", a:"Central Perk"},
-      {cat:"Pop Culture", q:"In The Office (US), what paper company do they work for?", a:"Dunder Mifflin"},
-      {cat:"Pop Culture", q:"In Marvel, what is Captain America’s shield made of?", a:"Vibranium"},
-      {cat:"Pop Culture", q:"In Stranger Things, what is Eleven’s favorite snack?", a:"Eggo waffles"}
-    ],
-    disney: [
-      {cat:"Disney", q:"In The Lion King, what is Simba’s father’s name?", a:"Mufasa"},
-      {cat:"Disney", q:"In Frozen, what is the name of the snowman?", a:"Olaf"},
-      {cat:"Disney", q:"In Aladdin, what is the name of Aladdin’s monkey?", a:"Abu"}
-    ],
-    y80s: [
-      {cat:"1980s", q:"What arcade character eats dots and avoids ghosts?", a:"Pac-Man"},
-      {cat:"1980s", q:"Which sci-fi movie features the DeLorean time machine?", a:"Back to the Future"},
-      {cat:"1980s", q:"Which band sang “Take On Me”?", a:"a-ha"}
-    ],
-    y90s: [
-      {cat:"1990s", q:"In The Fresh Prince of Bel-Air, what neighborhood does Will move to?", a:"Bel-Air"},
-      {cat:"1990s", q:"What is the name of the 90s handheld virtual pet?", a:"Tamagotchi"},
-      {cat:"1990s", q:"What TV show features the tagline “The Truth Is Out There”?", a:"The X-Files"}
-    ],
-    y2000s: [
-      {cat:"2000s", q:"What video platform launched in 2005?", a:"YouTube"},
-      {cat:"2000s", q:"What company launched the iPhone in 2007?", a:"Apple"}
-    ],
-    ww2: [
-      {cat:"World War 2", q:"What day is commonly known as the attack on Pearl Harbor?", a:"December 7, 1941"},
-      {cat:"World War 2", q:"What was the code name for the Allied invasion of Normandy?", a:"Operation Overlord"}
-    ]
+    // Star Wars (nerd favorites)
+    {cat:"Star Wars", q:"In Star Wars, what species is Admiral Ackbar?", a:"Mon Calamari", type:"open"},
+    {cat:"Star Wars", q:"In Star Wars, what is the name of Han Solo’s ship?", a:"The Millennium Falcon", type:"open"},
+    {cat:"Star Wars", q:"In Star Wars, what is the name of the planet where Luke is raised?", a:"Tatooine", type:"open"},
+
+    // 80s/90s/00s / Pop / Disney / WW2
+    {cat:"1980s", q:"Which sci-fi movie features a DeLorean time machine?", a:"Back to the Future", type:"open"},
+    {cat:"1990s", q:"What is the name of the 90s handheld virtual pet?", a:"Tamagotchi", type:"open"},
+    {cat:"1990s", q:"Which toy slime brand was famously marketed in the 90s?", a:"Gak", type:"open"},
+    {cat:"2000s", q:"What video platform launched in 2005?", a:"YouTube", type:"open"},
+    {cat:"Pop Culture", q:"In The Office (US), what company do they work for?", a:"Dunder Mifflin", type:"open"},
+    {cat:"Disney", q:"In The Lion King, what is Simba’s father’s name?", a:"Mufasa", type:"open"},
+    {cat:"World War 2", q:"What was the code name for the Allied invasion of Normandy?", a:"Operation Overlord", type:"open"},
+  ];
+
+  const TOPIC_LABEL = {
+    mixed: "Mixed",
+    custom: "Custom",
+    pop: "Pop Culture",
+    "80s": "1980s",
+    "90s": "1990s",
+    "2000s": "2000s",
+    disney: "Disney",
+    ww2: "World War 2",
+    tv: "TV",
+    movies: "Movies",
+    music: "Music",
+    science: "Science",
+    history: "History",
+    computers: "Computers"
   };
 
-  const ALL_CUSTOM = []
-    .concat(CUSTOM_PACK.base, CUSTOM_PACK.pop, CUSTOM_PACK.disney, CUSTOM_PACK.y80s, CUSTOM_PACK.y90s, CUSTOM_PACK.y2000s, CUSTOM_PACK.ww2)
-    .map(q => ({...q, type:"open"}));
+  /* OpenTDB category IDs */
+  const OTD = { gen:9, movies:11, music:12, tv:14, science:17, computers:18, history:23 };
 
-  const OTD_CATS = { gen:9, movies:11, music:12, tv:14, science:17, computers:18, history:23 };
-
+  /* -------------------- UTIL -------------------- */
   function toast(msg){
     ui.toast.textContent = msg;
     ui.toast.style.display = "block";
@@ -677,10 +784,16 @@
     ui.toast._t = setTimeout(()=> ui.toast.style.display="none", 1300);
   }
 
+  function setLoading(on, mode, sub){
+    ui.loader.style.display = on ? "block" : "none";
+    if (mode) ui.modeText.textContent = mode;
+    if (sub) ui.subText.textContent = sub;
+  }
+
   function shuffle(arr){
     for (let i=arr.length-1;i>0;i--){
       const j = Math.floor(Math.random()*(i+1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+      [arr[i],arr[j]] = [arr[j],arr[i]];
     }
     return arr;
   }
@@ -691,202 +804,264 @@
     return t.value;
   }
 
-  function makeKey(qObj){
-    const c=(qObj.cat||"").trim().toLowerCase();
-    const q=(qObj.q||"").trim().toLowerCase();
-    const a=(qObj.a||"").trim().toLowerCase();
+  function normalize(str){
+    return (str || "").trim().toLowerCase().replace(/\s+/g," ");
+  }
+
+  function hashKey(qObj){
+    // strict, stable key
+    const c = normalize(qObj.cat);
+    const q = normalize(qObj.q);
+    const a = normalize(qObj.a);
     return `${c}||${q}||${a}`;
   }
 
-  function ensureBank(topic){
-    if (!banks.has(topic)) banks.set(topic, []);
-    if (!bankKeys.has(topic)) bankKeys.set(topic, new Set());
-  }
-
-  function addToBank(topic, items){
-    ensureBank(topic);
-    const arr = banks.get(topic);
-    const keys = bankKeys.get(topic);
-    for (const item of items){
-      const k = makeKey(item);
-      if (!keys.has(k)){
-        keys.add(k);
-        arr.push(item);
+  function loadSeen(){
+    try{
+      const raw = localStorage.getItem(LS_SEEN);
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)){
+        seen = new Set(arr);
       }
-    }
+    }catch(e){}
   }
-
-  function resetWorkingDeck(topic){
-    const src = banks.get(topic) || [];
-    working.set(topic, shuffle(src.slice()));
-  }
-
-  function pickFromDeck(topic){
-    if (!working.has(topic)) resetWorkingDeck(topic);
-    const deck = working.get(topic);
-
-    while (deck.length){
-      const qObj = deck.shift();
-      const k = makeKey(qObj);
-      if (playedKeys.has(k)) continue;
-      playedKeys.add(k);
-      return qObj;
-    }
-    resetWorkingDeck(topic);
-    const d2 = working.get(topic);
-    while (d2.length){
-      const qObj = d2.shift();
-      const k = makeKey(qObj);
-      if (playedKeys.has(k)) continue;
-      playedKeys.add(k);
-      return qObj;
-    }
-    return null;
-  }
-
-  function fetchWithTimeout(url, ms){
-    return new Promise((resolve,reject)=>{
-      const controller = new AbortController();
-      const t=setTimeout(()=>{ controller.abort(); reject(new Error("timeout")); }, ms);
-      fetch(url, {cache:"no-store", signal:controller.signal})
-        .then(r=>{ clearTimeout(t); resolve(r); })
-        .catch(e=>{ clearTimeout(t); reject(e); });
-    });
-  }
-
-  function setLoading(on, top, sub){
-    ui.loader.style.display = on ? "block" : "none";
-    if (top) ui.modeText.textContent = top;
-    if (sub) ui.subText.textContent = sub;
-  }
-
-  function updateScores(){
-    ui.score1.textContent = String(p1Score);
-    ui.score2.textContent = String(p2Score);
-  }
-
-  function applyNames(){
-    ui.name1.textContent = names.p1.toUpperCase();
-    ui.name2.textContent = names.p2.toUpperCase();
-    ui.b1.textContent = names.p1.toUpperCase();
-    ui.b2.textContent = names.p2.toUpperCase();
-    ui.overlayP1.textContent = names.p1;
-    ui.overlayP2.textContent = names.p2;
-    document.title = `${names.p1} vs ${names.p2}: Trivia`;
+  function saveSeen(){
+    try{
+      // store as array
+      localStorage.setItem(LS_SEEN, JSON.stringify(Array.from(seen)));
+    }catch(e){}
   }
 
   function loadNames(){
     try{
-      const raw = localStorage.getItem(NAME_KEY);
-      if (raw){
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed.p1 === "string" && typeof parsed.p2 === "string"){
-          names = { p1: parsed.p1 || "Player 1", p2: parsed.p2 || "Player 2" };
-        }
+      const raw = localStorage.getItem(LS_NAMES);
+      if (!raw) return;
+      const n = JSON.parse(raw);
+      if (n && typeof n.p1 === "string" && typeof n.p2 === "string"){
+        names = { p1: n.p1 || "Player 1", p2: n.p2 || "Player 2" };
       }
     }catch(e){}
   }
-
   function saveNames(){
-    try{ localStorage.setItem(NAME_KEY, JSON.stringify(names)); }catch(e){}
+    try{ localStorage.setItem(LS_NAMES, JSON.stringify(names)); }catch(e){}
   }
 
-  function best10Status(){
-    if (!best10Enabled) return "READY";
+  function loadSettings(){
+    try{
+      const raw = localStorage.getItem(LS_SETTINGS);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s && typeof s === "object"){
+        settings = {
+          ...settings,
+          ...s
+        };
+      }
+    }catch(e){}
+  }
+  function saveSettings(){
+    try{ localStorage.setItem(LS_SETTINGS, JSON.stringify(settings)); }catch(e){}
+  }
+
+  function applyNames(){
+    ui.n1.textContent = names.p1.toUpperCase();
+    ui.n2.textContent = names.p2.toUpperCase();
+    ui.b1.textContent = names.p1.toUpperCase();
+    ui.b2.textContent = names.p2.toUpperCase();
+    document.title = `${names.p1} vs ${names.p2} Trivia`;
+  }
+
+  function applySettingsUI(){
+    ui.sfxChip.classList.toggle("on", settings.sfx);
+    ui.sfxChip.textContent = settings.sfx ? "ON" : "OFF";
+
+    ui.diffSel.value = settings.difficulty || "medium";
+
+    ui.randomChip.classList.toggle("on", settings.randomCategory);
+    ui.randomChip.textContent = settings.randomCategory ? "ON" : "OFF";
+
+    ui.best10Chip.classList.toggle("on", settings.best10);
+    ui.best10Chip.textContent = settings.best10 ? "ON" : "OFF";
+
+    ui.stealChip.classList.toggle("on", settings.steal);
+    ui.stealChip.textContent = settings.steal ? "ON" : "OFF";
+
+    ui.lightChip.classList.toggle("on", settings.lightning);
+    ui.lightChip.textContent = settings.lightning ? "ON" : "OFF";
+
+    ui.nerdChip.classList.toggle("on", settings.nerd);
+    ui.nerdChip.textContent = settings.nerd ? "ON" : "OFF";
+  }
+
+  function updateScores(){
+    ui.s1.textContent = String(scores.p1);
+    ui.s2.textContent = String(scores.p2);
+  }
+
+  function modeLine(){
+    if (settings.lightning) return `LIGHTNING • ${lightningTimeLeft}s`;
+    if (!settings.best10) return "READY";
     if (matchLocked) return "BEST OF 10 (FINISHED)";
     if (suddenDeath) return "SUDDEN DEATH";
-    return `BEST OF 10 • Q ${matchQCount}/${BEST10_MAX_Q}`;
-  }
-
-  function getSelectedTopic(){
-    if (!randomCategory) return ui.categorySelect.value;
-    const values = Array.from(ui.categorySelect.options).map(o=>o.value);
-    return values[Math.floor(Math.random()*values.length)];
+    return `BEST OF 10 • Q ${matchQCount}/10`;
   }
 
   function setAnswerVisible(on){
-    if (on) ui.a.classList.add("visible");
-    else ui.a.classList.remove("visible");
+    ui.ans.classList.toggle("visible", !!on);
   }
 
-  function setAdminActive(active){
-    if (active) ui.controls.classList.add("active-admin");
-    else ui.controls.classList.remove("active-admin");
+  function setAdminActive(on){
+    ui.controls.classList.toggle("activeAdmin", !!on);
   }
 
-  function lockBuzzers(lock){
-    if (lock) ui.controls.classList.add("locked");
-    else ui.controls.classList.remove("locked");
+  function setLocked(on){
+    ui.controls.classList.toggle("locked", !!on);
   }
 
   function clearOptions(){
-    ui.options.innerHTML = "";
-    ui.options.style.display = "none";
+    ui.opts.innerHTML = "";
+    ui.opts.style.display = "none";
+    lockedGuessIndex = null;
   }
 
   function renderOptions(qObj){
     clearOptions();
     if (!qObj || qObj.type !== "mc" || !Array.isArray(qObj.options) || qObj.options.length !== 4) return;
 
-    ui.options.style.display = "flex";
+    ui.opts.style.display = "flex";
     const labels = ["A","B","C","D"];
 
-    qObj.options.forEach((txt, i)=>{
+    qObj.options.forEach((txt, idx) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "option-btn";
-      btn.innerHTML = `<span class="opt-label">${labels[i]}.</span> ${txt}`;
-
-      btn.addEventListener("click", ()=>{
-        if (!lightningEnabled && buzzWinner === 0){
-          toast("Buzz first to lock an answer");
+      btn.innerHTML = `<span class="opt-label">${labels[idx]}.</span> ${txt}`;
+      btn.addEventListener("click", () => {
+        if (!settings.lightning && buzzWinner === 0){
+          toast("Buzz first");
           return;
         }
-
-        lockedGuessIndex = i;
-        ui.options.querySelectorAll(".option-btn").forEach(b=>b.classList.remove("locked"));
+        lockedGuessIndex = idx;
+        Array.from(ui.opts.querySelectorAll(".option-btn")).forEach(b => b.classList.remove("locked"));
         btn.classList.add("locked");
-
-        if (lightningEnabled){
-          const correct = (currentQ.type === "mc" && i === currentQ.correctIndex);
-          lightningPendingCorrect = correct;
-          showLightningOverlay();
-        } else {
-          toast("Answer locked");
-          if (navigator.vibrate) navigator.vibrate(15);
-        }
+        if (settings.sfx) haptic(15);
+        toast("Answer locked");
       });
-
-      ui.options.appendChild(btn);
+      ui.opts.appendChild(btn);
     });
   }
 
   function revealCorrectOption(){
     if (!currentQ || currentQ.type !== "mc") return;
     const idx = currentQ.correctIndex;
-    const buttons = Array.from(ui.options.querySelectorAll(".option-btn"));
-    if (Number.isInteger(idx) && buttons[idx]) buttons[idx].classList.add("correct");
+    const btns = Array.from(ui.opts.querySelectorAll(".option-btn"));
+    if (Number.isInteger(idx) && btns[idx]) btns[idx].classList.add("correct");
   }
 
-  function haptic(){ try{ if (navigator.vibrate) navigator.vibrate(20); }catch(e){} }
-  function beep(freq=440, ms=80){
+  function haptic(ms=18){
+    try{ if (navigator.vibrate) navigator.vibrate(ms); }catch(e){}
+  }
+
+  function beep(freq=520, ms=80){
     try{
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = "square";
-      o.frequency.value = freq;
-      g.gain.value = 0.05;
-      o.connect(g); g.connect(ctx.destination);
-      o.start();
-      setTimeout(()=>{ o.stop(); ctx.close(); }, ms);
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.value = freq;
+      gain.gain.value = 0.05;
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start();
+      setTimeout(()=>{ osc.stop(); ctx.close(); }, ms);
     }catch(e){}
   }
-  function sfxBuzz(){ if (!sfxOn) return; haptic(); beep(520, 80); }
-  function sfxCorrect(){ if (!sfxOn) return; haptic(); beep(780, 60); setTimeout(()=>beep(980, 60), 80); }
-  function sfxWrong(){ if (!sfxOn) return; haptic(); beep(220, 110); }
+
+  function sfxBuzz(){ if (!settings.sfx) return; haptic(20); beep(520, 80); }
+  function sfxCorrect(){ if (!settings.sfx) return; haptic(20); beep(780, 60); setTimeout(()=>beep(980, 60), 80); }
+  function sfxWrong(){ if (!settings.sfx) return; haptic(20); beep(220, 110); }
+
+  /* -------------------- BANK / DECK -------------------- */
+  function ensureTopic(topic){
+    if (!banks.has(topic)) banks.set(topic, []);
+    if (!bankKeys.has(topic)) bankKeys.set(topic, new Set());
+  }
+
+  function addToBank(topic, items){
+    ensureTopic(topic);
+    const arr = banks.get(topic);
+    const keys = bankKeys.get(topic);
+
+    for (const it of items){
+      const k = hashKey(it);
+      if (!keys.has(k)){
+        keys.add(k);
+        arr.push(it);
+      }
+    }
+  }
+
+  function resetDeck(topic){
+    const src = (banks.get(topic) || []);
+    workingDeck.set(topic, shuffle(src.slice()));
+  }
+
+  function pickFromTopic(topic){
+    ensureTopic(topic);
+    if (!workingDeck.has(topic)) resetDeck(topic);
+    const deck = workingDeck.get(topic);
+
+    while (deck.length){
+      const qObj = deck.shift();
+      const k = hashKey(qObj);
+      if (seen.has(k)) continue;         // strict no-repeat across sessions
+      if (!passesFilters(qObj)) continue;
+      seen.add(k);
+      saveSeen();
+      return qObj;
+    }
+
+    // reshuffle once and try again
+    resetDeck(topic);
+    const deck2 = workingDeck.get(topic);
+    while (deck2.length){
+      const qObj = deck2.shift();
+      const k = hashKey(qObj);
+      if (seen.has(k)) continue;
+      if (!passesFilters(qObj)) continue;
+      seen.add(k);
+      saveSeen();
+      return qObj;
+    }
+    return null;
+  }
+
+  function passesFilters(qObj){
+    // filter annoying patterns, ambiguity
+    const q = normalize(qObj.q);
+    for (const pat of BAD_PATTERNS){
+      if (q.includes(pat)) return false;
+    }
+    // must have enough incorrect options
+    if (qObj.type === "mc"){
+      if (!Array.isArray(qObj.options) || qObj.options.length !== 4) return false;
+      if (!Number.isInteger(qObj.correctIndex)) return false;
+    }
+    return true;
+  }
+
+  /* -------------------- OPENTDB FETCH -------------------- */
+  function fetchWithTimeout(url, ms){
+    return new Promise((resolve,reject)=>{
+      const controller = new AbortController();
+      const t = setTimeout(()=>{ controller.abort(); reject(new Error("timeout")); }, ms);
+      fetch(url, {cache:"no-store", signal:controller.signal})
+        .then(r => { clearTimeout(t); resolve(r); })
+        .catch(e => { clearTimeout(t); reject(e); });
+    });
+  }
 
   async function getToken(){
     try{
@@ -897,7 +1072,7 @@
     return null;
   }
 
-  function buildApiMC(item){
+  function buildMC(item){
     const q = decodeHtml(item.question);
     const correct = decodeHtml(item.correct_answer);
     const incorrect = (item.incorrect_answers || []).map(decodeHtml);
@@ -913,45 +1088,46 @@
     };
   }
 
-  async function fetchBatch(categoryId, difficulty){
-    let url = `https://opentdb.com/api.php?amount=${API_BATCH_SIZE}&type=multiple`;
-    if (categoryId) url += `&category=${categoryId}`;
-    if (difficulty) url += `&difficulty=${difficulty}`;
-    if (apiToken) url += `&token=${apiToken}`;
+  function topicToPlan(topic){
+    // nerd mode biases mixed toward sci-fi-ish buckets
+    if (topic === "mixed" && settings.nerd){
+      return [
+        {catId: OTD.tv, w: 2},
+        {catId: OTD.movies, w: 2},
+        {catId: OTD.computers, w: 2},
+        {catId: OTD.science, w: 2},
+        {catId: OTD.gen, w: 1},
+        {catId: OTD.history, w: 1},
+      ];
+    }
 
-    const res = await fetchWithTimeout(url, API_TIMEOUT_MS);
-    const data = await res.json();
-
-    if (!data.results || !data.results.length) return [];
-    return data.results.map(buildApiMC);
-  }
-
-  function topicToFetchPlan(topic){
     switch(topic){
-      case "tv": return [{catId: OTD_CATS.tv, w: 1}];
-      case "movies": return [{catId: OTD_CATS.movies, w: 1}];
-      case "music": return [{catId: OTD_CATS.music, w: 1}];
-      case "science": return [{catId: OTD_CATS.science, w: 1}];
-      case "history": return [{catId: OTD_CATS.history, w: 1}];
-      case "computers": return [{catId: OTD_CATS.computers, w: 1}];
-      case "ww2": return [{catId: OTD_CATS.history, w: 1}];
-      case "disney": return [{catId: OTD_CATS.movies, w: 2},{catId: OTD_CATS.gen, w:1}];
+      case "tv": return [{catId: OTD.tv, w: 1}];
+      case "movies": return [{catId: OTD.movies, w: 1}];
+      case "music": return [{catId: OTD.music, w: 1}];
+      case "science": return [{catId: OTD.science, w: 1}];
+      case "computers": return [{catId: OTD.computers, w: 1}];
+      case "history": return [{catId: OTD.history, w: 1}];
+      case "ww2": return [{catId: OTD.history, w: 1}];
+      case "disney": return [{catId: OTD.movies, w: 2},{catId: OTD.gen, w:1}];
       case "80s":
       case "90s":
       case "2000s":
-        return [{catId: OTD_CATS.music, w:2},{catId: OTD_CATS.tv, w:1},{catId: OTD_CATS.movies, w:1},{catId: OTD_CATS.gen, w:1}];
+        return [{catId: OTD.music, w:2},{catId: OTD.tv, w:1},{catId: OTD.movies, w:1},{catId: OTD.gen, w:1}];
       case "pop":
-        return [{catId: OTD_CATS.tv, w:2},{catId: OTD_CATS.movies, w:2},{catId: OTD_CATS.music, w:1},{catId: OTD_CATS.gen, w:1}];
+        return [{catId: OTD.tv, w:2},{catId: OTD.movies, w:2},{catId: OTD.music, w:1},{catId: OTD.gen, w:1}];
+      case "custom":
+        return []; // local only
       case "mixed":
       default:
         return [
-          {catId: OTD_CATS.gen, w:1},
-          {catId: OTD_CATS.tv, w:1},
-          {catId: OTD_CATS.movies, w:1},
-          {catId: OTD_CATS.music, w:1},
-          {catId: OTD_CATS.science, w:1},
-          {catId: OTD_CATS.history, w:1},
-          {catId: OTD_CATS.computers, w:1},
+          {catId: OTD.gen, w:1},
+          {catId: OTD.tv, w:1},
+          {catId: OTD.movies, w:1},
+          {catId: OTD.music, w:1},
+          {catId: OTD.science, w:1},
+          {catId: OTD.history, w:1},
+          {catId: OTD.computers, w:1},
         ];
     }
   }
@@ -963,84 +1139,95 @@
       r -= item.w;
       if (r <= 0) return item.catId;
     }
-    return plan[0].catId;
+    return plan[0]?.catId;
   }
 
-  async function warmupOnlineBanks(){
+  async function fetchBatchFor(topic){
     if (!apiToken) return;
+    if (topic === "custom") return;
 
+    // avoid spam fetching the same topic
+    if (fetching.has(topic)) return;
+    fetching.add(topic);
+
+    try{
+      const plan = topicToPlan(topic);
+      if (!plan.length) return;
+
+      const catId = pickWeighted(plan);
+      if (!catId) return;
+
+      let url = `https://opentdb.com/api.php?amount=${API_BATCH_SIZE}&type=multiple&category=${catId}&difficulty=${settings.difficulty}`;
+      url += `&token=${apiToken}`;
+
+      const r = await fetchWithTimeout(url, API_TIMEOUT_MS);
+      const data = await r.json();
+
+      const items = (data.results || []).map(buildMC).filter(passesFilters);
+
+      addToBank(topic, items);
+      if (topic !== "mixed") addToBank("mixed", items);
+
+      resetDeck(topic);
+      if (topic !== "mixed") resetDeck("mixed");
+    }catch(e){
+      // ignore
+    }finally{
+      fetching.delete(topic);
+    }
+  }
+
+  async function warmup(){
     const topics = ["mixed","tv","movies","music","science","history","computers","pop","80s","90s","2000s","disney","ww2"];
-    topics.forEach(ensureBank);
-
-    for (let i=0; i<FAST_WARMUP_BATCHES; i++){
-      const diff = ui.difficultySelect.value;
-      for (const topic of topics){
-        const plan = topicToFetchPlan(topic);
-        const catId = pickWeighted(plan);
-
-        setLoading(true, "READY", `Fetching… ${topic.toUpperCase()}`);
-        try{
-          const items = await fetchBatch(catId, diff);
-          addToBank(topic, items);
-          if (topic !== "mixed") addToBank("mixed", items);
-        }catch(e){}
+    for (let i=0;i<WARMUP_BATCHES;i++){
+      for (const t of topics){
+        ui.subText.textContent = `Warming up… ${TOPIC_LABEL[t] || t}`;
+        await fetchBatchFor(t);
       }
     }
-
-    setLoading(false, best10Status(), "Online ready • Loading more…");
-    topics.forEach(resetWorkingDeck);
+    ui.subText.textContent = "Online ready • Loading more…";
   }
 
-  async function backgroundFillLoop(){
-    if (!apiToken) return;
-
+  async function backgroundFill(){
     const topics = ["mixed","tv","movies","music","science","history","computers","pop","80s","90s","2000s","disney","ww2"];
-
     while(true){
-      const diff = ui.difficultySelect.value;
-      for (const topic of topics){
-        ensureBank(topic);
-        const size = (banks.get(topic) || []).length;
-
-        if (size < 220){
-          const plan = topicToFetchPlan(topic);
-          const catId = pickWeighted(plan);
-          ui.subText.textContent = `Fetching more… ${topic.toUpperCase()} ${size}/220`;
-          try{
-            const items = await fetchBatch(catId, diff);
-            addToBank(topic, items);
-            if (topic !== "mixed") addToBank("mixed", items);
-          }catch(e){}
+      if (!apiToken) return;
+      for (const t of topics){
+        ensureTopic(t);
+        const count = (banks.get(t) || []).length;
+        if (count < 220){
+          ui.subText.textContent = `Fetching more… ${TOPIC_LABEL[t] || t} ${count}/220`;
+          await fetchBatchFor(t);
         }
       }
       await new Promise(r=>setTimeout(r, 900));
     }
   }
 
+  /* -------------------- GAME FLOW -------------------- */
   function resetWinnerState(){
     buzzWinner = 0;
     lockedGuessIndex = null;
     ui.b1.classList.remove("winner");
     ui.b2.classList.remove("winner");
-    ui.options.querySelectorAll(".option-btn").forEach(b=>b.classList.remove("locked","correct"));
-    stealAvailable = false;
-    stealPlayer = 0;
+    Array.from(ui.opts.querySelectorAll(".option-btn")).forEach(b => b.classList.remove("locked","correct"));
   }
 
-  function resetForNext(){
+  function resetUIForNext(){
     clearInterval(timerInterval);
+    ui.pause.textContent = "Pause";
     paused = false;
-    ui.pauseBtn.textContent = "Pause";
+
     timeLeft = QUESTION_SECONDS;
     ui.timer.style.width = "100%";
-    ui.a.style.background = "#27ae60";
-    ui.a.textContent = "ANSWER HIDDEN";
+
+    ui.ans.style.background = getComputedStyle(document.documentElement).getPropertyValue("--good").trim() || "#27ae60";
+    ui.ans.textContent = "ANSWER HIDDEN";
     setAnswerVisible(false);
 
     resetWinnerState();
-    lockBuzzers(false);
+    setLocked(false);
     setAdminActive(true);
-
     clearOptions();
   }
 
@@ -1049,15 +1236,16 @@
     timeLeft = QUESTION_SECONDS;
     ui.timer.style.width = "100%";
 
-    timerInterval = setInterval(()=>{
-      if (paused || lightningEnabled) return;
+    timerInterval = setInterval(() => {
+      if (paused || settings.lightning) return;
+
       timeLeft -= (TICK_MS/1000);
       const pct = Math.max(0, (timeLeft/QUESTION_SECONDS)*100);
       ui.timer.style.width = pct + "%";
 
       if (timeLeft <= 0){
         clearInterval(timerInterval);
-        lockBuzzers(true);
+        setLocked(true);
         setAdminActive(true);
         toast("Time!");
       }
@@ -1066,64 +1254,120 @@
 
   function renderQuestion(qObj){
     currentQ = qObj;
-    ui.cat.textContent = (qObj.cat || "Trivia").toUpperCase();
+
+    ui.tag.textContent = (qObj.cat || "Trivia").toUpperCase();
     ui.q.textContent = qObj.q || "—";
-    ui.a.textContent = qObj.a || "—";
+    ui.ans.textContent = qObj.a || "—";
+
     setAnswerVisible(false);
     renderOptions(qObj);
   }
 
-  function pushUndo(){
-    undoStack.push({
-      p1Score, p2Score,
-      best10Enabled, matchQCount, matchLocked, suddenDeath,
-      lightningEnabled, lightningTimeLeft,
-      buzzWinner, lockedGuessIndex, stealAvailable, stealPlayer
-    });
-    if (undoStack.length > 15) undoStack.shift();
+  function currentTopic(){
+    if (!settings.randomCategory) return ui.cat.value;
+    // random category each question: pick from dropdown list excluding custom? include all.
+    const values = Array.from(ui.cat.options).map(o=>o.value);
+    return values[Math.floor(Math.random()*values.length)];
   }
 
-  function undo(){
-    const last = undoStack.pop();
-    if (!last){ toast("Nothing to undo"); return; }
+  function getQuestionForTopic(topic){
+    // local topic routing
+    if (topic === "custom"){
+      return pickFromTopic("custom");
+    }
 
-    p1Score = last.p1Score;
-    p2Score = last.p2Score;
-    best10Enabled = last.best10Enabled;
-    matchQCount = last.matchQCount;
-    matchLocked = last.matchLocked;
-    suddenDeath = last.suddenDeath;
+    // Attempt the topic deck first
+    let qObj = pickFromTopic(topic);
 
-    lightningEnabled = last.lightningEnabled;
-    lightningTimeLeft = last.lightningTimeLeft;
+    // Fallback to mixed if empty (still respects strict no-repeat)
+    if (!qObj && topic !== "mixed"){
+      qObj = pickFromTopic("mixed");
+    }
 
-    buzzWinner = last.buzzWinner;
-    lockedGuessIndex = last.lockedGuessIndex;
-    stealAvailable = last.stealAvailable;
-    stealPlayer = last.stealPlayer;
+    // Final fallback to custom
+    if (!qObj){
+      qObj = pickFromTopic("custom");
+    }
 
-    updateScores();
-    ui.modeText.textContent = best10Status();
-    toast("Undone");
+    return qObj;
   }
 
-  function handleBuzz(player){
-    if (paused || lightningEnabled) return;
-    if (!currentQ) return;
-    if (buzzWinner !== 0) return;
-    if (ui.controls.classList.contains("locked")) return;
-
-    buzzWinner = player;
-    sfxBuzz();
-
-    clearInterval(timerInterval);
-    lockBuzzers(true);
+  function endMatch(){
+    matchLocked = true;
+    setLocked(true);
     setAdminActive(true);
+    setAnswerVisible(true);
+    clearInterval(timerInterval);
 
-    if (player === 1) ui.b1.classList.add("winner");
-    else ui.b2.classList.add("winner");
+    let msg = "🤝 Tie game!";
+    if (scores.p1 > scores.p2) msg = `🏆 ${names.p1} wins!`;
+    if (scores.p2 > scores.p1) msg = `🏆 ${names.p2} wins!`;
 
-    toast(`${player === 1 ? names.p1 : names.p2} buzzed!`);
+    ui.tag.textContent = "MATCH OVER";
+    ui.q.textContent = msg;
+    ui.ans.textContent = "Tap Reset to play again.";
+    ui.timer.style.width = "0%";
+    toast("Match finished");
+  }
+
+  function checkBest10Gate(){
+    if (!settings.best10) return true;
+    if (matchLocked) return false;
+
+    // If we finished Q10 and not in sudden death:
+    if (!suddenDeath && matchQCount >= 10){
+      if (scores.p1 === scores.p2){
+        suddenDeath = true;
+        toast("Sudden death!");
+        return true;
+      }
+      endMatch();
+      return false;
+    }
+    return true;
+  }
+
+  function nextQuestion(){
+    if (!checkBest10Gate()) return;
+
+    // Apply A2: category changes apply on Next. We read live now.
+    const topic = currentTopic();
+
+    // Pre-fetch the selected topic (helps reduce “first load” pauses)
+    fetchBatchFor(topic).catch(()=>{});
+
+    resetUIForNext();
+
+    // Best-of-10 counter increments only when a question is actually dealt
+    // (and not after match is locked).
+    let qObj = getQuestionForTopic(topic);
+
+    if (!qObj){
+      // strict no-repeat means we can run out; show a clean message.
+      ui.tag.textContent = (TOPIC_LABEL[topic] || "DONE").toUpperCase();
+      ui.q.textContent = "You’ve exhausted all unique questions for this category on this device.";
+      ui.ans.textContent = "To replay questions, you’d need to clear site data (localStorage).";
+      setAnswerVisible(true);
+      setLocked(true);
+      setAdminActive(true);
+      return;
+    }
+
+    if (settings.best10 && !suddenDeath){
+      matchQCount++;
+    }
+
+    ui.modeText.textContent = modeLine();
+    ui.subText.textContent = `${TOPIC_LABEL[topic] || topic} • ${settings.difficulty.toUpperCase()}`;
+
+    renderQuestion(qObj);
+
+    if (settings.lightning){
+      // Lightning uses its own timer; no 30s timer
+      startLightningIfNeeded();
+    } else {
+      startTimer();
+    }
   }
 
   function showAnswer(){
@@ -1132,174 +1376,196 @@
     revealCorrectOption();
   }
 
+  function handleBuzz(player){
+    if (paused || settings.lightning) return;
+    if (!currentQ) return;
+    if (buzzWinner !== 0) return;
+    if (ui.controls.classList.contains("locked")) return;
+
+    buzzWinner = player;
+
+    sfxBuzz();
+    clearInterval(timerInterval);
+
+    setLocked(true);
+    setAdminActive(true);
+
+    if (player === 1) ui.b1.classList.add("winner");
+    else ui.b2.classList.add("winner");
+
+    toast(`${player === 1 ? names.p1 : names.p2} buzzed!`);
+  }
+
+  function pushUndo(){
+    undoStack.push({
+      scores: { ...scores },
+      matchQCount,
+      suddenDeath,
+      matchLocked,
+      settings: { ...settings },
+      lightningTimeLeft
+    });
+    if (undoStack.length > 20) undoStack.shift();
+  }
+
+  function undo(){
+    const last = undoStack.pop();
+    if (!last){ toast("Nothing to undo"); return; }
+    scores = { ...last.scores };
+    matchQCount = last.matchQCount;
+    suddenDeath = last.suddenDeath;
+    matchLocked = last.matchLocked;
+    settings = { ...settings, ...last.settings };
+    lightningTimeLeft = last.lightningTimeLeft;
+
+    updateScores();
+    ui.modeText.textContent = modeLine();
+    applySettingsUI();
+    toast("Undone");
+  }
+
   function markCorrect(){
     if (!currentQ) return;
     pushUndo();
 
-    if (buzzWinner === 0 && !lightningEnabled){
+    // In lightning: you should still buzz? we keep it simple:
+    // - if lightning is ON, allow Correct based on locked answer + buzzWinner
+    if (!settings.lightning && buzzWinner === 0){
       toast("No buzz — no point");
       sfxWrong();
       return;
     }
 
-    if (!lightningEnabled){
-      if (buzzWinner === 1) p1Score++;
-      else p2Score++;
-    }
+    // If MC and a guess is locked, you can optionally enforce correctness
+    // but you asked for judge buttons, so we don't auto-judge; still we
+    // highlight correct option if answer shown.
+    if (buzzWinner === 1) scores.p1++;
+    else if (buzzWinner === 2) scores.p2++;
 
     updateScores();
-    ui.a.style.background = "#2ecc71";
+
+    ui.ans.style.background = "#2ecc71";
     sfxCorrect();
-    toast("Point +1");
-    setTimeout(()=> ui.a.style.background="#27ae60", 420);
+    toast("+1");
+
+    // sudden death ends as soon as someone leads after a scored question
+    if (settings.best10 && suddenDeath && scores.p1 !== scores.p2){
+      endMatch();
+      return;
+    }
+
+    setTimeout(()=> ui.ans.style.background = "var(--good)", 420);
+  }
+
+  function enableStealForOtherPlayer(){
+    // If steal mode is ON, unlock buzzers so the other player can buzz
+    // Note: we preserve "Show Answer" being manual
+    if (!settings.steal) return;
+
+    const other = (buzzWinner === 1) ? 2 : (buzzWinner === 2 ? 1 : 0);
+    if (!other) return;
+
+    // allow other player to buzz; lock "wrong" player by disabling their buzzer
+    setLocked(false);
+    ui.b1.style.pointerEvents = (other === 1) ? "auto" : "none";
+    ui.b2.style.pointerEvents = (other === 2) ? "auto" : "none";
+    ui.b1.style.opacity = (other === 1) ? "1" : "0.35";
+    ui.b2.style.opacity = (other === 2) ? "1" : "0.35";
+
+    toast(`Steal available: ${other === 1 ? names.p1 : names.p2}`);
+  }
+
+  function resetBuzzerInteractivity(){
+    ui.b1.style.pointerEvents = "auto";
+    ui.b2.style.pointerEvents = "auto";
+    ui.b1.style.opacity = "";
+    ui.b2.style.opacity = "";
   }
 
   function markWrong(){
     if (!currentQ) return;
     pushUndo();
 
-    ui.a.style.background = "#e74c3c";
+    ui.ans.style.background = "#e74c3c";
     sfxWrong();
     toast("Wrong");
 
-    if (stealMode && !lightningEnabled && buzzWinner !== 0){
-      stealAvailable = true;
-      stealPlayer = (buzzWinner === 1) ? 2 : 1;
-      lockBuzzers(false);
-      toast(`Steal: ${stealPlayer === 1 ? names.p1 : names.p2}`);
+    if (!settings.lightning && settings.steal && buzzWinner !== 0){
+      enableStealForOtherPlayer();
     }
 
-    setTimeout(()=> ui.a.style.background="#27ae60", 420);
-  }
-
-  function endBest10(){
-    matchLocked = true;
-    lockBuzzers(true);
-    setAdminActive(true);
-    setAnswerVisible(true);
-    clearInterval(timerInterval);
-
-    let msg = "🤝 Tie game!";
-    if (p1Score > p2Score) msg = `🏆 ${names.p1} wins!`;
-    if (p2Score > p1Score) msg = `🏆 ${names.p2} wins!`;
-
-    ui.cat.textContent = "MATCH OVER";
-    ui.q.textContent = msg;
-    ui.a.textContent = "Tap Reset to play again.";
-    ui.timer.style.width = "0%";
-    toast("Match finished");
-  }
-
-  function checkSuddenDeathAfterScore(){
-    if (!best10Enabled || !suddenDeath) return;
-    if (p1Score !== p2Score){
-      endBest10();
-    } else {
-      toast("Still tied — next tiebreak question");
-    }
-  }
-
-  function getNextQuestionObj(forLightning=false){
-    const topic = getSelectedTopic();
-    let qObj = pickFromDeck(topic);
-    if (!qObj && topic !== "custom") qObj = pickFromDeck("custom");
-    if (!qObj && topic !== "mixed") qObj = pickFromDeck("mixed");
-    return qObj;
-  }
-
-  function nextQuestion(){
-    if (matchLocked){
-      toast("Match finished — Reset");
-      return;
-    }
-
-    if (best10Enabled && !suddenDeath){
-      if (matchQCount >= BEST10_MAX_Q){
-        if (p1Score === p2Score){
-          suddenDeath = true;
-          toast("Sudden death!");
-        } else {
-          endBest10();
-          return;
-        }
-      }
-    }
-
-    if (best10Enabled && !suddenDeath){
-      matchQCount++;
-    }
-
-    resetForNext();
-
-    const qObj = getNextQuestionObj(false);
-    if (!qObj){
-      ui.cat.textContent = "DONE";
-      ui.q.textContent = "No more unique questions this session.";
-      ui.a.textContent = "Refresh to reset question pool.";
-      setAnswerVisible(true);
-      lockBuzzers(true);
-      setAdminActive(true);
-      return;
-    }
-
-    renderQuestion(qObj);
-    ui.modeText.textContent = best10Status();
-    startTimer();
+    setTimeout(()=> ui.ans.style.background = "var(--good)", 420);
   }
 
   function togglePause(){
-    if (!currentQ && !lightningEnabled){
+    if (!currentQ && !settings.lightning){
       toast("Start a question first");
       return;
     }
     paused = !paused;
-    ui.pauseBtn.textContent = paused ? "Resume" : "Pause";
+    ui.pause.textContent = paused ? "Resume" : "Pause";
 
     if (paused){
-      lockBuzzers(true);
+      setLocked(true);
       setAdminActive(true);
       toast("Paused");
     } else {
-      if (!lightningEnabled){
+      if (!settings.lightning){
         if (buzzWinner === 0 && timeLeft > 0){
-          lockBuzzers(false);
+          setLocked(false);
         }
       }
       toast("Resumed");
     }
   }
 
-  function toggleRandom(){
-    randomCategory = !randomCategory;
-    ui.randomBtn.classList.toggle("on", randomCategory);
-    ui.randomBtn.textContent = randomCategory ? "RANDOM: ON" : "RANDOM: OFF";
-    toast(randomCategory ? "Random ON" : "Random OFF");
+  /* -------------------- LIGHTNING -------------------- */
+  function startLightningIfNeeded(){
+    if (!settings.lightning) return;
+
+    ui.modeText.textContent = modeLine();
+
+    if (lightningInterval) return; // already running
+
+    lightningTimeLeft = Math.max(1, lightningTimeLeft);
+
+    lightningInterval = setInterval(() => {
+      if (paused) return;
+      lightningTimeLeft -= 1;
+      if (lightningTimeLeft < 0) lightningTimeLeft = 0;
+      ui.modeText.textContent = modeLine();
+
+      if (lightningTimeLeft <= 0){
+        clearInterval(lightningInterval);
+        lightningInterval = null;
+        settings.lightning = false;
+        saveSettings();
+        applySettingsUI();
+
+        toast("Lightning over!");
+        ui.modeText.textContent = modeLine();
+        setLocked(true);
+        setAdminActive(true);
+      }
+    }, 1000);
   }
 
-  function toggleBest10(){
-    best10Enabled = !best10Enabled;
-    suddenDeath = false;
-    matchLocked = false;
-    matchQCount = 0;
-
-    ui.best10Btn.classList.toggle("on", best10Enabled);
-    ui.best10Btn.textContent = best10Enabled ? "BEST10: ON" : "BEST10";
-    ui.modeText.textContent = best10Status();
-    toast(best10Enabled ? "Best of 10 ON" : "Best of 10 OFF");
+  function stopLightning(){
+    if (lightningInterval){
+      clearInterval(lightningInterval);
+      lightningInterval = null;
+    }
+    lightningTimeLeft = LIGHTNING_SECONDS;
   }
 
-  function toggleSteal(){
-    stealMode = !stealMode;
-    ui.stealBtn.classList.toggle("on", stealMode);
-    ui.stealBtn.textContent = stealMode ? "STEAL: ON" : "STEAL: OFF";
-    toast(stealMode ? "Steal ON" : "Steal OFF");
+  /* -------------------- SETTINGS SHEET -------------------- */
+  function openSheet(){
+    ui.sheetOverlay.style.display = "flex";
+    ui.sheetOverlay.setAttribute("aria-hidden", "false");
   }
-
-  function toggleSfx(){
-    sfxOn = !sfxOn;
-    ui.sfxBtn.classList.toggle("on", sfxOn);
-    ui.sfxBtn.textContent = sfxOn ? "SFX: ON" : "SFX: OFF";
-    toast(sfxOn ? "Sound ON" : "Sound OFF");
+  function closeSheet(){
+    ui.sheetOverlay.style.display = "none";
+    ui.sheetOverlay.setAttribute("aria-hidden", "true");
   }
 
   function editNames(){
@@ -1314,117 +1580,201 @@
     toast("Names updated");
   }
 
+  /* -------------------- RESET -------------------- */
   function resetAll(){
     clearInterval(timerInterval);
+    resetBuzzerInteractivity();
 
     paused = false;
-    ui.pauseBtn.textContent = "Pause";
+    ui.pause.textContent = "Pause";
 
-    p1Score = 0; p2Score = 0;
+    scores = { p1:0, p2:0 };
     updateScores();
 
-    best10Enabled = false;
+    matchQCount = 0;
     suddenDeath = false;
     matchLocked = false;
-    matchQCount = 0;
 
-    stealAvailable = false;
-    stealPlayer = 0;
-    lockedGuessIndex = null;
+    stopLightning();
+    settings.lightning = false;
+    saveSettings();
+    applySettingsUI();
 
     undoStack.length = 0;
-    playedKeys.clear();
-    working.clear();
 
-    ui.best10Btn.classList.remove("on");
-    ui.best10Btn.textContent = "BEST10";
     ui.modeText.textContent = "READY";
+    ui.subText.textContent = apiToken ? "Online ready • Loading more…" : "Offline mode (custom only)";
 
-    ui.cat.textContent = "CUSTOM";
+    ui.tag.textContent = "CUSTOM";
     ui.q.textContent = 'Tap “Next →” to start!';
-    ui.a.textContent = "ANSWER HIDDEN";
+    ui.ans.textContent = "ANSWER HIDDEN";
     setAnswerVisible(false);
     ui.timer.style.width = "100%";
 
     resetWinnerState();
     clearOptions();
-    lockBuzzers(false);
+    setLocked(false);
+    setAdminActive(true);
 
-    for (const topic of banks.keys()) resetWorkingDeck(topic);
+    // rebuild decks (banks remain, but we reshuffle)
+    for (const topic of banks.keys()) resetDeck(topic);
+
     toast("Reset");
   }
 
-  // Category change disables random so it actually sticks
-  ui.categorySelect.addEventListener("change", ()=>{
-    randomCategory = false;
-    ui.randomBtn.classList.remove("on");
-    ui.randomBtn.textContent = "RANDOM: OFF";
-    toast("Category set");
+  /* -------------------- EVENT WIRING -------------------- */
+  ui.cat.addEventListener("change", () => {
+    // A2: apply on Next. Also, if random was on, keep it on only if user wants.
+    // You did NOT ask to auto-disable random on category change, so we keep random as-is.
+    // (If you want it to auto-disable, tell me and I'll swap it.)
+    toast(`Category set: ${TOPIC_LABEL[ui.cat.value] || ui.cat.value}`);
   });
 
-  ui.b1.addEventListener("click", ()=> handleBuzz(1));
-  ui.b2.addEventListener("click", ()=> handleBuzz(2));
+  ui.b1.addEventListener("click", () => handleBuzz(1));
+  ui.b2.addEventListener("click", () => handleBuzz(2));
 
-  ui.showBtn.addEventListener("click", showAnswer);
+  ui.show.addEventListener("click", showAnswer);
 
-  ui.correctBtn.addEventListener("click", ()=>{
-    const before1 = p1Score, before2 = p2Score;
+  ui.correct.addEventListener("click", () => {
     markCorrect();
-    if (best10Enabled && suddenDeath && (p1Score !== before1 || p2Score !== before2)){
-      checkSuddenDeathAfterScore();
-    }
   });
 
-  ui.wrongBtn.addEventListener("click", markWrong);
-  ui.nextBtn.addEventListener("click", nextQuestion);
+  ui.wrong.addEventListener("click", () => {
+    markWrong();
+  });
 
-  ui.undoBtn.addEventListener("click", undo);
-  ui.pauseBtn.addEventListener("click", togglePause);
-  ui.resetBtn.addEventListener("click", resetAll);
+  ui.next.addEventListener("click", () => {
+    resetBuzzerInteractivity(); // important after steal attempt
+    nextQuestion();
+  });
 
-  ui.randomBtn.addEventListener("click", toggleRandom);
-  ui.best10Btn.addEventListener("click", toggleBest10);
-  ui.namesBtn.addEventListener("click", editNames);
-  ui.stealBtn.addEventListener("click", toggleSteal);
-  ui.sfxBtn.addEventListener("click", toggleSfx);
+  ui.undo.addEventListener("click", undo);
+  ui.pause.addEventListener("click", togglePause);
+  ui.reset.addEventListener("click", resetAll);
 
-  // Lightning button stays (no-op in this compact version for now)
-  ui.lightningBtn.addEventListener("click", ()=> toast("Lightning stays ON in your other version"));
+  ui.settingsBtn.addEventListener("click", openSheet);
+  ui.sheetClose.addEventListener("click", closeSheet);
+  ui.sheetOverlay.addEventListener("click", (e) => {
+    if (e.target === ui.sheetOverlay) closeSheet();
+  });
 
+  ui.sfxChip.addEventListener("click", () => {
+    settings.sfx = !settings.sfx;
+    saveSettings(); applySettingsUI();
+    toast(`SFX ${settings.sfx ? "ON" : "OFF"}`);
+  });
+
+  ui.diffSel.addEventListener("change", () => {
+    settings.difficulty = ui.diffSel.value || "medium";
+    saveSettings(); applySettingsUI();
+    toast(`Difficulty: ${settings.difficulty}`);
+    // proactively fetch for selected category with new difficulty
+    fetchBatchFor(ui.cat.value).catch(()=>{});
+  });
+
+  ui.randomChip.addEventListener("click", () => {
+    settings.randomCategory = !settings.randomCategory;
+    saveSettings(); applySettingsUI();
+    toast(`Random ${settings.randomCategory ? "ON" : "OFF"}`);
+  });
+
+  ui.best10Chip.addEventListener("click", () => {
+    settings.best10 = !settings.best10;
+    // reset match counters when toggled
+    matchQCount = 0;
+    suddenDeath = false;
+    matchLocked = false;
+
+    saveSettings(); applySettingsUI();
+    ui.modeText.textContent = modeLine();
+    toast(`Best of 10 ${settings.best10 ? "ON" : "OFF"}`);
+  });
+
+  ui.stealChip.addEventListener("click", () => {
+    settings.steal = !settings.steal;
+    saveSettings(); applySettingsUI();
+    toast(`Steal ${settings.steal ? "ON" : "OFF"}`);
+  });
+
+  ui.lightChip.addEventListener("click", () => {
+    settings.lightning = !settings.lightning;
+    if (settings.lightning){
+      // lightning expects MC questions; we’ll fetch and bias to MC sources
+      lightningTimeLeft = LIGHTNING_SECONDS;
+      toast("Lightning ON");
+    } else {
+      stopLightning();
+      toast("Lightning OFF");
+    }
+    saveSettings(); applySettingsUI();
+    ui.modeText.textContent = modeLine();
+  });
+
+  ui.nerdChip.addEventListener("click", () => {
+    settings.nerd = !settings.nerd;
+    saveSettings(); applySettingsUI();
+    toast(`Nerd Mode ${settings.nerd ? "ON" : "OFF"}`);
+    // refresh warm fetch
+    fetchBatchFor("mixed").catch(()=>{});
+  });
+
+  ui.namesChip.addEventListener("click", () => editNames());
+
+  /* -------------------- INIT -------------------- */
   function initBanks(){
     const topics = ["mixed","custom","tv","movies","music","science","history","computers","pop","80s","90s","2000s","disney","ww2"];
-    topics.forEach(ensureBank);
+    topics.forEach(ensureTopic);
 
-    addToBank("custom", ALL_CUSTOM);
-    addToBank("mixed", ALL_CUSTOM);
+    // add custom questions into relevant banks
+    addToBank("custom", CUSTOM);
 
-    topics.forEach(resetWorkingDeck);
+    // mixed gets a copy for fallback fun
+    addToBank("mixed", CUSTOM);
+
+    // Also seed some category-specific custom routing (nice to have)
+    addToBank("pop", CUSTOM.filter(x => x.cat === "Pop Culture"));
+    addToBank("80s", CUSTOM.filter(x => x.cat === "1980s"));
+    addToBank("90s", CUSTOM.filter(x => x.cat === "1990s"));
+    addToBank("2000s", CUSTOM.filter(x => x.cat === "2000s"));
+    addToBank("disney", CUSTOM.filter(x => x.cat === "Disney"));
+    addToBank("ww2", CUSTOM.filter(x => x.cat === "World War 2"));
+
+    topics.forEach(resetDeck);
   }
 
   async function init(){
-    loadNames(); applyNames();
-    initBanks();
+    loadSeen();
+    loadNames();
+    loadSettings();
+
+    applyNames();
+    applySettingsUI();
+    updateScores();
+
+    ui.q.textContent = 'Tap “Next →” to start!';
+    ui.tag.textContent = "CUSTOM";
+    ui.ans.textContent = "ANSWER HIDDEN";
+    setAnswerVisible(false);
 
     setAdminActive(true);
-    lockBuzzers(false);
-    setAnswerVisible(false);
-    ui.a.textContent = "ANSWER HIDDEN";
-    ui.q.textContent = 'Tap “Next →” to start!';
-    ui.cat.textContent = "CUSTOM";
-    ui.modeText.textContent = "READY";
+    setLocked(false);
+
+    initBanks();
 
     setLoading(true, "READY", "Connecting…");
     apiToken = await getToken();
+
     if (!apiToken){
       setLoading(false, "READY", "Offline mode (custom only)");
       return;
     }
 
     setLoading(true, "READY", "Warming up…");
-    await warmupOnlineBanks();
+    await warmup();
     setLoading(false, "READY", "Online ready • Loading more…");
 
-    setTimeout(()=> backgroundFillLoop(), 600);
+    // background fill
+    setTimeout(() => backgroundFill(), 600);
   }
 
   init();
