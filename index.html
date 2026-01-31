@@ -27,7 +27,6 @@
       background:var(--bg);
       color:var(--text);
 
-      /* Fit modern mobile UI chrome (Safari/Chrome dynamic bars) */
       height:100svh;
       height:100dvh;
       overflow:hidden;
@@ -51,7 +50,6 @@
       flex-direction:column;
     }
 
-    /* ---------- HEADER ---------- */
     .header{
       flex:0 0 auto;
       height:46px;
@@ -96,7 +94,6 @@
     }
     @keyframes spin { to { transform:rotate(360deg); } }
 
-    /* ---------- MAIN ---------- */
     .main{
       flex:1 1 auto;
       min-height:0;
@@ -147,7 +144,6 @@
       text-transform:uppercase;
     }
 
-    /* Board should be only as tall as needed, but still handle long text internally */
     .question{
       margin:0;
       padding:0 4px;
@@ -156,13 +152,11 @@
       font-size:1.02rem;
       line-height:1.18;
 
-      /* keep board compact; scroll inside if question is long */
       max-height: 4.6em;
       overflow:auto;
       -webkit-overflow-scrolling: touch;
     }
 
-    /* Options always visible (D1): reserve space for 4 lines */
     .options{
       display:none;
       flex:0 0 auto;
@@ -210,7 +204,6 @@
     }
     .answer.visible{ opacity:1; }
 
-    /* ---------- CONTROLS ---------- */
     .controls{
       flex:0 0 auto;
       background: rgba(0,0,0,0.30);
@@ -221,7 +214,6 @@
       gap:8px;
     }
 
-    /* Tight-to-text buttons */
     .row{
       display:flex;
       gap:8px;
@@ -239,7 +231,6 @@
       background: var(--muted);
       padding:0 10px;
 
-      /* shrink near content but allow growth for selected label */
       width: max-content;
       max-width: 100%;
     }
@@ -322,7 +313,6 @@
     .pause{ background: rgba(52,152,219,0.55); color:#122231; }
     .good{ background: rgba(46,204,113,0.55); color:#122231; }
 
-    /* ---------- TOAST ---------- */
     .toast{
       position:fixed;
       left:50%;
@@ -340,7 +330,6 @@
       z-index:9999;
     }
 
-    /* ---------- SETTINGS SHEET ---------- */
     .overlay{
       position:fixed;
       inset:0;
@@ -432,7 +421,6 @@
       border:none;
     }
 
-    /* Small screens: tighten further */
     @media (max-height: 740px){
       .header{ height:44px; }
       .main{ padding:8px 10px 6px; gap:7px; }
@@ -480,6 +468,7 @@
           <select class="catSelect" id="cat">
             <option value="mixed" selected>MIXED</option>
             <option value="custom">CUSTOM (Friends/HIMYM/Star Wars/90s)</option>
+            <option value="alina">ALINA (AGE 3–5)</option>
             <option value="pop">POP CULTURE</option>
             <option value="80s">1980s</option>
             <option value="90s">1990s</option>
@@ -520,7 +509,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <!-- SETTINGS SHEET -->
   <div class="overlay" id="sheetOverlay" aria-hidden="true">
     <div class="sheet" role="dialog" aria-modal="true" aria-label="Settings">
       <div class="sheetHead">
@@ -628,8 +616,15 @@
   const API_BATCH_SIZE = 30;
   const WARMUP_BATCHES = 2;
 
-  /* Strict no-repeat across sessions */
-  const LS_SEEN = "trivia_seen_strict_v1";
+  /* Alina prefetch (fast start / staged loading) */
+  const ALINA_FAST_START_MIN = 50;
+  const ALINA_STAGE1_TARGET = 500;
+  const ALINA_STAGE2_TRIGGER_AT = 450;  // when served count reaches this, resume to load more
+  const ALINA_STAGE2_ADD = 500;         // load another 500
+  const ALINA_STAGE2_TARGET = ALINA_STAGE1_TARGET + ALINA_STAGE2_ADD; // 1000
+
+  /* Strict no-repeat across sessions (hashed IDs) */
+  const LS_SEEN = "trivia_seen_hash_v2";
   const LS_NAMES = "trivia_names_v4";
   const LS_SETTINGS = "trivia_settings_v4";
 
@@ -657,7 +652,6 @@
 
     cat: document.getElementById("cat"),
     controls: document.getElementById("controls"),
-    adminRowWrap: document.getElementById("adminRow"),
     b1: document.getElementById("b1"),
     b2: document.getElementById("b2"),
     show: document.getElementById("show"),
@@ -708,7 +702,7 @@
   let timeLeft = QUESTION_SECONDS;
 
   /* best-of-10 */
-  let matchQCount = 0;            // Q number in match
+  let matchQCount = 0;
   let suddenDeath = false;
   let matchLocked = false;
 
@@ -716,37 +710,37 @@
   let lightningTimeLeft = LIGHTNING_SECONDS;
   let lightningInterval = null;
 
-  /* strict no-repeat set */
+  /* strict no-repeat set (hashed IDs) */
   let seen = new Set();
 
-  /* per-category banks */
+  /* per-topic banks */
   const banks = new Map();        // topic -> array of question objects
-  const bankKeys = new Map();     // topic -> set of keys in bank
+  const bankKeys = new Map();     // topic -> set of hashes in bank (for bank uniqueness)
   const workingDeck = new Map();  // topic -> shuffled array
   const fetching = new Set();     // topic being fetched to avoid spam
 
   const undoStack = [];
 
+  /* Alina staged loading tracking */
+  let alinaServedCount = 0;            // count served this session
+  let alinaStage2Started = false;      // once true, we try to reach ALINA_STAGE2_TARGET
+
   /* -------------------- DATA -------------------- */
   const CUSTOM = [
-    // Friends
     {cat:"Friends", q:"In FRIENDS, what is the name of Joey's bedtime penguin?", a:"Hugsy", type:"open"},
     {cat:"Friends", q:"In FRIENDS, what name does Phoebe use as her alter ego?", a:"Regina Phalange", type:"open"},
     {cat:"Friends", q:"In FRIENDS, what is Chandler Bing's middle name?", a:"Muriel", type:"open"},
     {cat:"Friends", q:"In FRIENDS, what color is Monica and Rachel’s apartment door?", a:"Purple", type:"open"},
     {cat:"Friends", q:"In FRIENDS, what is the name of the coffee shop the group hangs out at?", a:"Central Perk", type:"open"},
 
-    // HIMYM
     {cat:"HIMYM", q:"In How I Met Your Mother, where does the gang frequently hang out?", a:"MacLaren's Pub", type:"open"},
     {cat:"HIMYM", q:"In How I Met Your Mother, what item does Ted steal for Robin?", a:"A blue French horn", type:"open"},
     {cat:"HIMYM", q:"In How I Met Your Mother, what is Barney’s catchphrase?", a:"Legendary", type:"open"},
 
-    // Star Wars (nerd favorites)
     {cat:"Star Wars", q:"In Star Wars, what species is Admiral Ackbar?", a:"Mon Calamari", type:"open"},
     {cat:"Star Wars", q:"In Star Wars, what is the name of Han Solo’s ship?", a:"The Millennium Falcon", type:"open"},
     {cat:"Star Wars", q:"In Star Wars, what is the name of the planet where Luke is raised?", a:"Tatooine", type:"open"},
 
-    // 80s/90s/00s / Pop / Disney / WW2
     {cat:"1980s", q:"Which sci-fi movie features a DeLorean time machine?", a:"Back to the Future", type:"open"},
     {cat:"1990s", q:"What is the name of the 90s handheld virtual pet?", a:"Tamagotchi", type:"open"},
     {cat:"1990s", q:"Which toy slime brand was famously marketed in the 90s?", a:"Gak", type:"open"},
@@ -759,6 +753,7 @@
   const TOPIC_LABEL = {
     mixed: "Mixed",
     custom: "Custom",
+    alina: "Alina (Age 3–5)",
     pop: "Pop Culture",
     "80s": "1980s",
     "90s": "1990s",
@@ -775,6 +770,15 @@
 
   /* OpenTDB category IDs */
   const OTD = { gen:9, movies:11, music:12, tv:14, science:17, computers:18, history:23 };
+
+  /* The Trivia API (v2) categories enum includes: general_knowledge, science, geography, food_and_drink, etc.  [oai_citation:1‡The Trivia API](https://the-trivia-api.com/docs/v2/?utm_source=chatgpt.com) */
+  const ALINA_TRIVIAAPI_CATS = [
+    "general_knowledge",
+    "science",
+    "geography",
+    "food_and_drink",
+    "society_and_culture"
+  ];
 
   /* -------------------- UTIL -------------------- */
   function toast(msg){
@@ -808,12 +812,26 @@
     return (str || "").trim().toLowerCase().replace(/\s+/g," ");
   }
 
-  function hashKey(qObj){
-    // strict, stable key
+  /* FNV-1a 32-bit hash -> hex string (compact localStorage) */
+  function fnv1a(str){
+    let h = 0x811c9dc5;
+    for (let i=0; i<str.length; i++){
+      h ^= str.charCodeAt(i);
+      // h *= 16777619 (with 32-bit overflow)
+      h = (h + ((h<<1) + (h<<4) + (h<<7) + (h<<8) + (h<<24))) >>> 0;
+    }
+    return ("00000000" + h.toString(16)).slice(-8);
+  }
+
+  function stableKey(qObj){
     const c = normalize(qObj.cat);
     const q = normalize(qObj.q);
     const a = normalize(qObj.a);
     return `${c}||${q}||${a}`;
+  }
+
+  function hashIdFor(qObj){
+    return fnv1a(stableKey(qObj));
   }
 
   function loadSeen(){
@@ -821,16 +839,11 @@
       const raw = localStorage.getItem(LS_SEEN);
       if (!raw) return;
       const arr = JSON.parse(raw);
-      if (Array.isArray(arr)){
-        seen = new Set(arr);
-      }
+      if (Array.isArray(arr)) seen = new Set(arr);
     }catch(e){}
   }
   function saveSeen(){
-    try{
-      // store as array
-      localStorage.setItem(LS_SEEN, JSON.stringify(Array.from(seen)));
-    }catch(e){}
+    try{ localStorage.setItem(LS_SEEN, JSON.stringify(Array.from(seen))); }catch(e){}
   }
 
   function loadNames(){
@@ -853,10 +866,7 @@
       if (!raw) return;
       const s = JSON.parse(raw);
       if (s && typeof s === "object"){
-        settings = {
-          ...settings,
-          ...s
-        };
+        settings = { ...settings, ...s };
       }
     }catch(e){}
   }
@@ -995,9 +1005,9 @@
     const keys = bankKeys.get(topic);
 
     for (const it of items){
-      const k = hashKey(it);
-      if (!keys.has(k)){
-        keys.add(k);
+      const id = hashIdFor(it);
+      if (!keys.has(id)){
+        keys.add(id);
         arr.push(it);
       }
     }
@@ -1008,6 +1018,56 @@
     workingDeck.set(topic, shuffle(src.slice()));
   }
 
+  function passesFilters(qObj){
+    const q = normalize(qObj.q);
+    for (const pat of BAD_PATTERNS){
+      if (q.includes(pat)) return false;
+    }
+    if (qObj.type === "mc"){
+      if (!Array.isArray(qObj.options) || qObj.options.length !== 4) return false;
+      if (!Number.isInteger(qObj.correctIndex)) return false;
+    }
+    return true;
+  }
+
+  /* Alina-safe filter: very kid-friendly heuristics */
+  function passesAlinaSafe(qObj){
+    if (!qObj || qObj.type !== "mc") return false;
+
+    const q = (qObj.q || "").trim();
+    const a = (qObj.a || "").trim();
+    const opts = qObj.options || [];
+
+    // Basic requirements
+    if (!q.endsWith("?")) return false;
+    if (q.length < 8 || q.length > 80) return false;
+
+    // Reject numbers/years
+    if (/\d/.test(q)) return false;
+
+    // Keep simple words (rough heuristic)
+    const words = q.replace(/[^\w\s'?]/g,"").split(/\s+/).filter(Boolean);
+    if (words.length > 12) return false;
+
+    // Reject complex phrasing
+    const badStarts = ["which of these", "according to", "in what year", "what year", "who was", "what is the capital", "what is the name of the", "how many"];
+    const qLower = normalize(q);
+    for (const s of badStarts){
+      if (qLower.startsWith(s)) return false;
+    }
+    if (qLower.includes("following")) return false;
+
+    // Answer + options short
+    if (a.length > 24) return false;
+    if (opts.some(x => (x || "").length > 24)) return false;
+
+    // Avoid rare punctuation/quotes
+    if (/[“”"()]/.test(q)) return false;
+    if (q.includes(",")) return false;
+
+    return true;
+  }
+
   function pickFromTopic(topic){
     ensureTopic(topic);
     if (!workingDeck.has(topic)) resetDeck(topic);
@@ -1015,41 +1075,31 @@
 
     while (deck.length){
       const qObj = deck.shift();
-      const k = hashKey(qObj);
-      if (seen.has(k)) continue;         // strict no-repeat across sessions
+      const id = hashIdFor(qObj);
+      if (seen.has(id)) continue;
       if (!passesFilters(qObj)) continue;
-      seen.add(k);
+      if (topic === "alina" && !passesAlinaSafe(qObj)) continue;
+
+      seen.add(id);
       saveSeen();
       return qObj;
     }
 
-    // reshuffle once and try again
     resetDeck(topic);
     const deck2 = workingDeck.get(topic);
     while (deck2.length){
       const qObj = deck2.shift();
-      const k = hashKey(qObj);
-      if (seen.has(k)) continue;
+      const id = hashIdFor(qObj);
+      if (seen.has(id)) continue;
       if (!passesFilters(qObj)) continue;
-      seen.add(k);
+      if (topic === "alina" && !passesAlinaSafe(qObj)) continue;
+
+      seen.add(id);
       saveSeen();
       return qObj;
     }
-    return null;
-  }
 
-  function passesFilters(qObj){
-    // filter annoying patterns, ambiguity
-    const q = normalize(qObj.q);
-    for (const pat of BAD_PATTERNS){
-      if (q.includes(pat)) return false;
-    }
-    // must have enough incorrect options
-    if (qObj.type === "mc"){
-      if (!Array.isArray(qObj.options) || qObj.options.length !== 4) return false;
-      if (!Number.isInteger(qObj.correctIndex)) return false;
-    }
-    return true;
+    return null;
   }
 
   /* -------------------- OPENTDB FETCH -------------------- */
@@ -1072,7 +1122,7 @@
     return null;
   }
 
-  function buildMC(item){
+  function buildMCFromOpenTDB(item){
     const q = decodeHtml(item.question);
     const correct = decodeHtml(item.correct_answer);
     const incorrect = (item.incorrect_answers || []).map(decodeHtml);
@@ -1089,7 +1139,6 @@
   }
 
   function topicToPlan(topic){
-    // nerd mode biases mixed toward sci-fi-ish buckets
     if (topic === "mixed" && settings.nerd){
       return [
         {catId: OTD.tv, w: 2},
@@ -1117,7 +1166,8 @@
       case "pop":
         return [{catId: OTD.tv, w:2},{catId: OTD.movies, w:2},{catId: OTD.music, w:1},{catId: OTD.gen, w:1}];
       case "custom":
-        return []; // local only
+      case "alina":
+        return [];
       case "mixed":
       default:
         return [
@@ -1142,11 +1192,9 @@
     return plan[0]?.catId;
   }
 
-  async function fetchBatchFor(topic){
+  async function fetchBatchOpenTDBFor(topic){
     if (!apiToken) return;
-    if (topic === "custom") return;
-
-    // avoid spam fetching the same topic
+    if (topic === "custom" || topic === "alina") return;
     if (fetching.has(topic)) return;
     fetching.add(topic);
 
@@ -1163,7 +1211,7 @@
       const r = await fetchWithTimeout(url, API_TIMEOUT_MS);
       const data = await r.json();
 
-      const items = (data.results || []).map(buildMC).filter(passesFilters);
+      const items = (data.results || []).map(buildMCFromOpenTDB).filter(passesFilters);
 
       addToBank(topic, items);
       if (topic !== "mixed") addToBank("mixed", items);
@@ -1177,30 +1225,160 @@
     }
   }
 
-  async function warmup(){
+  /* -------------------- THE TRIVIA API (ALINA) -------------------- */
+  function buildMCFromTriviaAPI(item){
+    // v2 format: question.text, correctAnswer, incorrectAnswers, category
+    const q = (item?.question?.text ?? item?.question ?? "").toString();
+    const correct = (item?.correctAnswer ?? item?.correct_answer ?? "").toString();
+    const incorrect = (item?.incorrectAnswers ?? item?.incorrect_answers ?? []);
+    const incArr = Array.isArray(incorrect) ? incorrect.map(x => (x ?? "").toString()) : [];
+
+    const cleanQ = decodeHtml(q).trim();
+    const cleanCorrect = decodeHtml(correct).trim();
+    const cleanInc = incArr.map(x => decodeHtml(x).trim()).filter(Boolean);
+
+    if (!cleanQ || !cleanCorrect || cleanInc.length < 3) return null;
+
+    const all = shuffle([cleanCorrect, ...cleanInc.slice(0,3)]);
+    const correctIndex = all.indexOf(cleanCorrect);
+
+    return {
+      cat: "Alina",
+      q: cleanQ.endsWith("?") ? cleanQ : (cleanQ + "?"),
+      a: cleanCorrect,
+      type: "mc",
+      options: all,
+      correctIndex
+    };
+  }
+
+  async function fetchBatchAlina(limit=50){
+    // The Trivia API v2: categories + difficulties + limit  [oai_citation:2‡The Trivia API](https://the-trivia-api.com/?utm_source=chatgpt.com)
+    // We always use easy for Alina.
+    const cats = ALINA_TRIVIAAPI_CATS.join(",");
+    const url = `https://the-trivia-api.com/v2/questions?limit=${limit}&difficulties=easy&categories=${encodeURIComponent(cats)}`;
+
+    const r = await fetchWithTimeout(url, API_TIMEOUT_MS);
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : (data?.results || []);
+    const built = [];
+    for (const it of arr){
+      const qObj = buildMCFromTriviaAPI(it);
+      if (!qObj) continue;
+      if (!passesFilters(qObj)) continue;
+      if (!passesAlinaSafe(qObj)) continue;
+      built.push(qObj);
+    }
+    return built;
+  }
+
+  async function ensureAlinaPrefetchTargets(){
+    // Non-blocking staged prefetch:
+    // - Stage 1 target = 500 (playable at 50)
+    // - Stage 2 starts at served #450, target = 1000 total in bank
+    ensureTopic("alina");
+
+    const bank = banks.get("alina") || [];
+    const target = alinaStage2Started ? ALINA_STAGE2_TARGET : ALINA_STAGE1_TARGET;
+
+    // If already at/above target, do nothing.
+    if (bank.length >= target) return;
+
+    if (fetching.has("alina")) return;
+    fetching.add("alina");
+
+    try{
+      // Refill-until-valid logic: try several batches until we make progress or hit attempts.
+      let attempts = 0;
+      let madeProgress = false;
+
+      while (attempts < 10 && (banks.get("alina") || []).length < target){
+        attempts++;
+
+        const before = (banks.get("alina") || []).length;
+        const batch = await fetchBatchAlina(50);
+
+        // Remove anything already seen (strict)
+        const filtered = batch.filter(qObj => !seen.has(hashIdFor(qObj)));
+        addToBank("alina", filtered);
+        resetDeck("alina");
+
+        const after = (banks.get("alina") || []).length;
+        if (after > before) madeProgress = true;
+
+        // If we got nothing useful, keep trying a few times; otherwise yield control quickly.
+        if (madeProgress && after >= Math.min(target, before + 100)) break;
+        await new Promise(r => setTimeout(r, 120));
+      }
+    }catch(e){
+      // ignore; we’ll fallback gracefully
+    }finally{
+      fetching.delete("alina");
+    }
+  }
+
+  /* -------------------- WARMUP / BACKGROUND FILL -------------------- */
+  async function warmupOpenTDB(){
     const topics = ["mixed","tv","movies","music","science","history","computers","pop","80s","90s","2000s","disney","ww2"];
     for (let i=0;i<WARMUP_BATCHES;i++){
       for (const t of topics){
         ui.subText.textContent = `Warming up… ${TOPIC_LABEL[t] || t}`;
-        await fetchBatchFor(t);
+        await fetchBatchOpenTDBFor(t);
       }
     }
     ui.subText.textContent = "Online ready • Loading more…";
   }
 
-  async function backgroundFill(){
+  async function backgroundFillOpenTDB(){
     const topics = ["mixed","tv","movies","music","science","history","computers","pop","80s","90s","2000s","disney","ww2"];
     while(true){
       if (!apiToken) return;
+
       for (const t of topics){
         ensureTopic(t);
         const count = (banks.get(t) || []).length;
         if (count < 220){
           ui.subText.textContent = `Fetching more… ${TOPIC_LABEL[t] || t} ${count}/220`;
-          await fetchBatchFor(t);
+          await fetchBatchOpenTDBFor(t);
         }
       }
       await new Promise(r=>setTimeout(r, 900));
+    }
+  }
+
+  async function alinaFastStartLoop(){
+    // Start fetching until at least 50 Alina questions are queued, then keep going to 500.
+    // This loop never blocks gameplay.
+    while(true){
+      try{
+        ensureTopic("alina");
+        const count = (banks.get("alina") || []).length;
+
+        // Stage trigger: once served count reaches 450, start stage2
+        if (!alinaStage2Started && alinaServedCount >= ALINA_STAGE2_TRIGGER_AT){
+          alinaStage2Started = true;
+        }
+
+        const target = alinaStage2Started ? ALINA_STAGE2_TARGET : ALINA_STAGE1_TARGET;
+
+        // Pause when at/above target
+        if (count >= target){
+          await new Promise(r => setTimeout(r, 1200));
+          continue;
+        }
+
+        // UI status hint (not too spammy)
+        if (ui.cat.value === "alina"){
+          const label = alinaStage2Started ? `Alina loading… ${count}/${ALINA_STAGE2_TARGET}` : `Alina loading… ${count}/${ALINA_STAGE1_TARGET}`;
+          ui.subText.textContent = label;
+        }
+
+        await ensureAlinaPrefetchTargets();
+
+        await new Promise(r => setTimeout(r, 350));
+      }catch(e){
+        await new Promise(r => setTimeout(r, 1200));
+      }
     }
   }
 
@@ -1265,31 +1443,8 @@
 
   function currentTopic(){
     if (!settings.randomCategory) return ui.cat.value;
-    // random category each question: pick from dropdown list excluding custom? include all.
     const values = Array.from(ui.cat.options).map(o=>o.value);
     return values[Math.floor(Math.random()*values.length)];
-  }
-
-  function getQuestionForTopic(topic){
-    // local topic routing
-    if (topic === "custom"){
-      return pickFromTopic("custom");
-    }
-
-    // Attempt the topic deck first
-    let qObj = pickFromTopic(topic);
-
-    // Fallback to mixed if empty (still respects strict no-repeat)
-    if (!qObj && topic !== "mixed"){
-      qObj = pickFromTopic("mixed");
-    }
-
-    // Final fallback to custom
-    if (!qObj){
-      qObj = pickFromTopic("custom");
-    }
-
-    return qObj;
   }
 
   function endMatch(){
@@ -1314,7 +1469,6 @@
     if (!settings.best10) return true;
     if (matchLocked) return false;
 
-    // If we finished Q10 and not in sudden death:
     if (!suddenDeath && matchQCount >= 10){
       if (scores.p1 === scores.p2){
         suddenDeath = true;
@@ -1327,23 +1481,65 @@
     return true;
   }
 
+  function getQuestionForTopic(topic){
+    // Alina special: ensure we have at least some queue; refill until valid if needed
+    if (topic === "alina"){
+      const qObj = pickFromTopic("alina");
+      if (qObj) return qObj;
+
+      // Refill-until-valid: try to fetch more a few times quickly
+      (async()=>{ await ensureAlinaPrefetchTargets(); })();
+
+      return null;
+    }
+
+    if (topic === "custom"){
+      return pickFromTopic("custom");
+    }
+
+    let qObj = pickFromTopic(topic);
+    if (!qObj && topic !== "mixed"){
+      qObj = pickFromTopic("mixed");
+    }
+    if (!qObj){
+      qObj = pickFromTopic("custom");
+    }
+    return qObj;
+  }
+
   function nextQuestion(){
     if (!checkBest10Gate()) return;
 
-    // Apply A2: category changes apply on Next. We read live now.
     const topic = currentTopic();
 
-    // Pre-fetch the selected topic (helps reduce “first load” pauses)
-    fetchBatchFor(topic).catch(()=>{});
+    // For OpenTDB categories, prefetch the selected topic
+    if (topic !== "custom" && topic !== "alina"){
+      fetchBatchOpenTDBFor(topic).catch(()=>{});
+    }
+    // For Alina, ensure background targets (fast-start will also be running)
+    if (topic === "alina"){
+      ensureAlinaPrefetchTargets().catch(()=>{});
+    }
 
     resetUIForNext();
 
-    // Best-of-10 counter increments only when a question is actually dealt
-    // (and not after match is locked).
     let qObj = getQuestionForTopic(topic);
 
     if (!qObj){
-      // strict no-repeat means we can run out; show a clean message.
+      // Alina: if not enough queued yet, show a friendly loading message (fast start)
+      if (topic === "alina"){
+        const count = (banks.get("alina") || []).length;
+        ui.tag.textContent = "ALINA";
+        ui.q.textContent = count < ALINA_FAST_START_MIN
+          ? `Loading Alina questions… (${count}/${ALINA_FAST_START_MIN} to start)`
+          : "Loading more Alina questions…";
+        ui.ans.textContent = "Tap Next again in a moment.";
+        setAnswerVisible(true);
+        setLocked(true);
+        setAdminActive(true);
+        return;
+      }
+
       ui.tag.textContent = (TOPIC_LABEL[topic] || "DONE").toUpperCase();
       ui.q.textContent = "You’ve exhausted all unique questions for this category on this device.";
       ui.ans.textContent = "To replay questions, you’d need to clear site data (localStorage).";
@@ -1357,13 +1553,21 @@
       matchQCount++;
     }
 
+    // Track Alina served count (for stage2 trigger)
+    if (topic === "alina"){
+      alinaServedCount++;
+      if (!alinaStage2Started && alinaServedCount >= ALINA_STAGE2_TRIGGER_AT){
+        alinaStage2Started = true;
+      }
+    }
+
     ui.modeText.textContent = modeLine();
-    ui.subText.textContent = `${TOPIC_LABEL[topic] || topic} • ${settings.difficulty.toUpperCase()}`;
+    const diffLabel = (topic === "alina") ? "EASY" : (settings.difficulty || "medium").toUpperCase();
+    ui.subText.textContent = `${TOPIC_LABEL[topic] || topic} • ${diffLabel}`;
 
     renderQuestion(qObj);
 
     if (settings.lightning){
-      // Lightning uses its own timer; no 30s timer
       startLightningIfNeeded();
     } else {
       startTimer();
@@ -1403,7 +1607,9 @@
       suddenDeath,
       matchLocked,
       settings: { ...settings },
-      lightningTimeLeft
+      lightningTimeLeft,
+      alinaServedCount,
+      alinaStage2Started
     });
     if (undoStack.length > 20) undoStack.shift();
   }
@@ -1417,6 +1623,8 @@
     matchLocked = last.matchLocked;
     settings = { ...settings, ...last.settings };
     lightningTimeLeft = last.lightningTimeLeft;
+    alinaServedCount = last.alinaServedCount;
+    alinaStage2Started = last.alinaStage2Started;
 
     updateScores();
     ui.modeText.textContent = modeLine();
@@ -1428,17 +1636,12 @@
     if (!currentQ) return;
     pushUndo();
 
-    // In lightning: you should still buzz? we keep it simple:
-    // - if lightning is ON, allow Correct based on locked answer + buzzWinner
     if (!settings.lightning && buzzWinner === 0){
       toast("No buzz — no point");
       sfxWrong();
       return;
     }
 
-    // If MC and a guess is locked, you can optionally enforce correctness
-    // but you asked for judge buttons, so we don't auto-judge; still we
-    // highlight correct option if answer shown.
     if (buzzWinner === 1) scores.p1++;
     else if (buzzWinner === 2) scores.p2++;
 
@@ -1448,7 +1651,6 @@
     sfxCorrect();
     toast("+1");
 
-    // sudden death ends as soon as someone leads after a scored question
     if (settings.best10 && suddenDeath && scores.p1 !== scores.p2){
       endMatch();
       return;
@@ -1458,14 +1660,11 @@
   }
 
   function enableStealForOtherPlayer(){
-    // If steal mode is ON, unlock buzzers so the other player can buzz
-    // Note: we preserve "Show Answer" being manual
     if (!settings.steal) return;
 
     const other = (buzzWinner === 1) ? 2 : (buzzWinner === 2 ? 1 : 0);
     if (!other) return;
 
-    // allow other player to buzz; lock "wrong" player by disabling their buzzer
     setLocked(false);
     ui.b1.style.pointerEvents = (other === 1) ? "auto" : "none";
     ui.b2.style.pointerEvents = (other === 2) ? "auto" : "none";
@@ -1525,7 +1724,7 @@
 
     ui.modeText.textContent = modeLine();
 
-    if (lightningInterval) return; // already running
+    if (lightningInterval) return;
 
     lightningTimeLeft = Math.max(1, lightningTimeLeft);
 
@@ -1602,6 +1801,9 @@
 
     undoStack.length = 0;
 
+    alinaServedCount = 0;
+    alinaStage2Started = false;
+
     ui.modeText.textContent = "READY";
     ui.subText.textContent = apiToken ? "Online ready • Loading more…" : "Offline mode (custom only)";
 
@@ -1616,7 +1818,6 @@
     setLocked(false);
     setAdminActive(true);
 
-    // rebuild decks (banks remain, but we reshuffle)
     for (const topic of banks.keys()) resetDeck(topic);
 
     toast("Reset");
@@ -1624,27 +1825,25 @@
 
   /* -------------------- EVENT WIRING -------------------- */
   ui.cat.addEventListener("change", () => {
-    // A2: apply on Next. Also, if random was on, keep it on only if user wants.
-    // You did NOT ask to auto-disable random on category change, so we keep random as-is.
-    // (If you want it to auto-disable, tell me and I'll swap it.)
     toast(`Category set: ${TOPIC_LABEL[ui.cat.value] || ui.cat.value}`);
+    // If user switches to Alina, give a quick status
+    if (ui.cat.value === "alina"){
+      const count = (banks.get("alina") || []).length;
+      ui.subText.textContent = `Alina loading… ${count}/${ALINA_STAGE1_TARGET}`;
+      // kick prefetch immediately
+      ensureAlinaPrefetchTargets().catch(()=>{});
+    }
   });
 
   ui.b1.addEventListener("click", () => handleBuzz(1));
   ui.b2.addEventListener("click", () => handleBuzz(2));
 
   ui.show.addEventListener("click", showAnswer);
-
-  ui.correct.addEventListener("click", () => {
-    markCorrect();
-  });
-
-  ui.wrong.addEventListener("click", () => {
-    markWrong();
-  });
+  ui.correct.addEventListener("click", () => { markCorrect(); });
+  ui.wrong.addEventListener("click", () => { markWrong(); });
 
   ui.next.addEventListener("click", () => {
-    resetBuzzerInteractivity(); // important after steal attempt
+    resetBuzzerInteractivity();
     nextQuestion();
   });
 
@@ -1668,8 +1867,10 @@
     settings.difficulty = ui.diffSel.value || "medium";
     saveSettings(); applySettingsUI();
     toast(`Difficulty: ${settings.difficulty}`);
-    // proactively fetch for selected category with new difficulty
-    fetchBatchFor(ui.cat.value).catch(()=>{});
+    // proactively fetch for selected category with new difficulty (not Alina)
+    if (ui.cat.value !== "alina"){
+      fetchBatchOpenTDBFor(ui.cat.value).catch(()=>{});
+    }
   });
 
   ui.randomChip.addEventListener("click", () => {
@@ -1680,7 +1881,6 @@
 
   ui.best10Chip.addEventListener("click", () => {
     settings.best10 = !settings.best10;
-    // reset match counters when toggled
     matchQCount = 0;
     suddenDeath = false;
     matchLocked = false;
@@ -1699,7 +1899,6 @@
   ui.lightChip.addEventListener("click", () => {
     settings.lightning = !settings.lightning;
     if (settings.lightning){
-      // lightning expects MC questions; we’ll fetch and bias to MC sources
       lightningTimeLeft = LIGHTNING_SECONDS;
       toast("Lightning ON");
     } else {
@@ -1714,24 +1913,19 @@
     settings.nerd = !settings.nerd;
     saveSettings(); applySettingsUI();
     toast(`Nerd Mode ${settings.nerd ? "ON" : "OFF"}`);
-    // refresh warm fetch
-    fetchBatchFor("mixed").catch(()=>{});
+    fetchBatchOpenTDBFor("mixed").catch(()=>{});
   });
 
   ui.namesChip.addEventListener("click", () => editNames());
 
   /* -------------------- INIT -------------------- */
   function initBanks(){
-    const topics = ["mixed","custom","tv","movies","music","science","history","computers","pop","80s","90s","2000s","disney","ww2"];
+    const topics = ["mixed","custom","alina","tv","movies","music","science","history","computers","pop","80s","90s","2000s","disney","ww2"];
     topics.forEach(ensureTopic);
 
-    // add custom questions into relevant banks
     addToBank("custom", CUSTOM);
-
-    // mixed gets a copy for fallback fun
     addToBank("mixed", CUSTOM);
 
-    // Also seed some category-specific custom routing (nice to have)
     addToBank("pop", CUSTOM.filter(x => x.cat === "Pop Culture"));
     addToBank("80s", CUSTOM.filter(x => x.cat === "1980s"));
     addToBank("90s", CUSTOM.filter(x => x.cat === "1990s"));
@@ -1761,20 +1955,22 @@
 
     initBanks();
 
+    // Start Alina fast-start loader (does NOT block gameplay)
+    setTimeout(() => alinaFastStartLoop(), 200);
+
     setLoading(true, "READY", "Connecting…");
     apiToken = await getToken();
 
     if (!apiToken){
-      setLoading(false, "READY", "Offline mode (custom only)");
+      setLoading(false, "READY", "Offline mode (custom only) • Alina requires internet");
       return;
     }
 
     setLoading(true, "READY", "Warming up…");
-    await warmup();
+    await warmupOpenTDB();
     setLoading(false, "READY", "Online ready • Loading more…");
 
-    // background fill
-    setTimeout(() => backgroundFill(), 600);
+    setTimeout(() => backgroundFillOpenTDB(), 600);
   }
 
   init();
